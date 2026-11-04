@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PVS-14 PLS Simulation</title>
+<style>
+  :root { --bg:#050806; --fg:#d8f5dc; --muted:#7f9a84; --accent:#5dff7a; }
+  html,body { margin:0; background:var(--bg); color:var(--fg); font-family: Inter, "DejaVu Sans", system-ui, sans-serif; }
+  #wrap { max-width:1280px; margin:0 auto; padding-block:16px; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); box-sizing:border-box; }
+  canvas { width:100%; height:auto; display:block; background:#000; border-radius:6px; }
+  #ctl { display:flex; gap:12px; align-items:center; margin-top:10px; }
+  #ctl button { background:#12301a; color:var(--fg); border:1px solid #2c5a36; border-radius:4px; padding:6px 14px; font:inherit; cursor:pointer; }
+  #ctl button:focus-visible, #ctl input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  #ctl input { flex:1; min-width:0; accent-color: var(--accent); }
+  #tc { font-variant-numeric: tabular-nums; color:var(--muted); min-width:90px; text-align:right; }
+  body.render #wrap { padding:0 !important; max-width:none; } body.render #ctl { display:none; } body.render canvas { border-radius:0; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c" width="1280" height="720"></canvas>
+  <div id="ctl"><button id="play">Play</button><input id="seek" type="range" min="0" max="300" step="0.01" value="0"><span id="tc">0:00</span></div>
+  <audio id="aud" src="narration.m4a" preload="auto"></audio>
+</div>
+<script src="timeline.js"></script>
+<script>
+"use strict";
+const W = 1280, H = 720;
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const world = document.createElement('canvas'); world.width = W; world.height = H;
+const wx = world.getContext('2d');
+const TL = window.TIMELINE;
+const FONT = 'Inter, "DejaVu Sans", sans-serif';
+
+// ---------- utilities ----------
+function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const smooth = (a, b, x) => { const k = clamp((x - a) / (b - a), 0, 1); return k * k * (3 - 2 * k); };
+function hash(n) { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+function gray(l, a = 1) { const v = Math.round(clamp(l, 0, 1) * 255); return `rgba(${v},${v},${v},${a})`; }
+
+let FRAME = 0;
+let SC = null, LT = 0;           // current scene + local time
+function sStart(i) { const s = SC.sentences[Math.min(i, SC.sentences.length - 1)]; return s ? s.start : 0; }
+function sEnd(i) { const s = SC.sentences[Math.min(i, SC.sentences.length - 1)]; return s ? s.start + s.dur : 0; }
+function reveal(at, len = 0.5) { return smooth(at, at + len, LT); }
+
+// ---------- noise (tube scintillation) ----------
+const NOISE = [];
+(function () { const r = rng(7); for (let k = 0; k < 10; k++) { const c = document.createElement('canvas'); c.width = 427; c.height = 240; const g = c.getContext('2d'); const id = g.createImageData(c.width, c.height); for (let i = 0; i < id.data.length; i += 4) { const v = r() < 0.5 ? 0 : Math.pow(r(), 3) * 255; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; } g.putImageData(id, 0, 0); NOISE.push(c); } })();
+
+// ---------- NVG road world ----------
+const CX = 640, CY = 338, R = 300, HY = 300;
+const F = R / Math.tan(20 * Math.PI / 180);  // 40 deg FOV across the tube
+const CAMH = 2.6;                            // PLS cab eye height (m)
+const curve = z => 14 * Math.sin(z / 110) + 6 * Math.sin(z / 41 + 1.3);
+const dcurve = z => 14 / 110 * Math.cos(z / 110) + 6 / 41 * Math.cos(z / 41 + 1.3);
+
+const PROPS = [];
+(function () { const r = rng(42); let z = 5; while (z < 6000) { z += 8 + r() * 22; const side = r() < 0.5 ? -1 : 1; const k = r(); PROPS.push({ z, x: side * (7 + r() * 26), type: k < 0.62 ? 'tree' : k < 0.85 ? 'bush' : 'stake', h: 5 + r() * 7, w: 0.6 + r() * 0.8, seed: r() }); } })();
+const STARS = []; (function () { const r = rng(99); for (let i = 0; i < 260; i++) STARS.push({ a: (r() - 0.5) * 3.2, y: r() * HY, b: 0.4 + r() * 0.6 }); })();
+
+// project world point (lateral X relative to road centre at the camera, depth z ahead of camera)
+function proj(camZ, laneX, yaw, xOff, z, y) {
+  const xr = curve(camZ + z) - curve(camZ) - dcurve(camZ) * z + xOff - laneX;
+  return { x: CX + (xr / z - yaw) * F, y: HY + (CAMH - y) / z * F, s: F / z };
+}
+
+// opts: camZ, yaw, laneX, illum, extras(fn), dash
+function drawRoadWorld(o) {
+  const g = wx, camZ = o.camZ, yaw = o.yaw || 0, laneX = o.laneX ?? 1.6, il = o.illum ?? 1;
+  // sky
+  const sky = g.createLinearGradient(0, 0, 0, HY);
+  sky.addColorStop(0, gray(0.10 * il)); sky.addColorStop(1, gray(0.34 * il));
+  g.fillStyle = sky; g.fillRect(0, 0, W, HY + 1);
+  for (const s of STARS) { const x = CX + (s.a - yaw) * F * 0.9; if (x < 0 || x > W) continue; g.fillStyle = gray(s.b); g.fillRect(x, s.y, 2, 2); }
+  // tree line on the horizon
+  g.fillStyle = gray(0.12 * il);
+  g.beginPath(); g.moveTo(0, HY + 2);
+  for (let x = 0; x <= W; x += 6) { const a = (x - CX) / F + yaw + camZ * 0.0004; const h = 10 + 14 * hash(Math.floor(a * 40)) + 8 * Math.sin(a * 9) + 6 * Math.sin(a * 23); g.lineTo(x, HY - h); }
+  g.lineTo(W, HY + 2); g.closePath(); g.fill();
+  // ground rows
+  for (let y = HY + 1; y < H; y++) {
+    const z = CAMH * F / (y - HY); const wz = camZ + z;
+    const fade = clamp(1 - z / 400, 0.25, 1);
+    const tex = 0.03 * hash(Math.floor(wz * 1.3)) + 0.02 * ((Math.floor(wz / 4) & 1));
+    g.fillStyle = gray((0.24 + tex) * il * (0.7 + 0.3 * fade)); g.fillRect(0, y, W, 1);
+    const xr = curve(wz) - curve(camZ) - dcurve(camZ) * z - laneX;
+    const cx = CX + (xr / z - yaw) * F, hw = 4.2 / z * F;
+    g.fillStyle = gray((0.46 + tex * 1.5) * il * (0.75 + 0.25 * fade)); g.fillRect(cx - hw, y, hw * 2, 1);
+    g.fillStyle = gray((0.34 + tex) * il); const rw = Math.max(1, 0.35 / z * F);
+    g.fillRect(cx - 1.9 / z * F - rw / 2, y, rw, 1); g.fillRect(cx + 1.0 / z * F - rw / 2, y, rw, 1);
+  }
+  // props far -> near
+  const vis = [];
+  for (const p of PROPS) { const z = p.z - camZ; if (z > 2.5 && z < 420) vis.push([z, p]); }
+  if (o.objects) for (const ob of o.objects) { const z = ob.z - camZ; if (z > 1.5 && z < 600) vis.push([z, ob]); }
+  vis.sort((a, b) => b[0] - a[0]);
+  for (const [z, p] of vis) {
+    const b = proj(camZ, laneX, yaw, p.x, z, 0), s = b.s; if (b.x < -200 || b.x > W + 200) continue;
+    const fog = clamp(1 - z / 450, 0.3, 1);
+    if (p.type === 'tree') {
+      g.fillStyle = gray(0.10 * il * fog + 0.04); g.beginPath();
+      g.ellipse(b.x, b.y - p.h * 0.62 * s, p.h * 0.32 * s, p.h * 0.5 * s, 0, 0, Math.PI * 2); g.fill();
+      g.fillRect(b.x - 0.15 * s, b.y - p.h * 0.3 * s, 0.3 * s, p.h * 0.3 * s);
+    } else if (p.type === 'bush') {
+      g.fillStyle = gray(0.16 * il * fog + 0.03); g.beginPath(); g.ellipse(b.x, b.y - 0.5 * s, 1.3 * s, 0.7 * s, 0, 0, Math.PI * 2); g.fill();
+    } else if (p.type === 'stake') {
+      g.fillStyle = gray(0.55 * il); g.fillRect(b.x - 0.05 * s, b.y - 1.2 * s, Math.max(1, 0.1 * s), 1.2 * s);
+      g.fillStyle = gray(0.95); g.fillRect(b.x - 0.06 * s, b.y - 1.15 * s, Math.max(2, 0.12 * s), Math.max(2, 0.12 * s));
+    } else if (p.type === 'truck') {           // rear of a vehicle
+      const w = 2.5 * s, h = 3.2 * s;
+      g.fillStyle = gray(0.22 * il + 0.05); g.fillRect(b.x - w / 2, b.y - h, w, h * 0.85);
+      g.fillStyle = gray(0.08); g.fillRect(b.x - w / 2, b.y - h * 0.28, w, h * 0.13);
+      g.fillStyle = gray(0.05); for (const dx of [-0.9, 0.9]) g.fillRect(b.x + dx * s - 0.3 * s, b.y - 1.0 * s, 0.6 * s, 1.0 * s);
+      g.fillStyle = gray(1); for (const dx of [-1.05, 1.05]) { g.beginPath(); g.arc(b.x + dx * s, b.y - 1.4 * s, Math.max(1.5, 0.09 * s), 0, 7); g.fill(); }
+    } else if (p.type === 'person') {
+      const h = 1.8 * s; g.fillStyle = gray(0.6 * il + 0.15);
+      g.beginPath(); g.arc(b.x, b.y - h * 0.92, h * 0.08, 0, 7); g.fill(); g.fillRect(b.x - h * 0.09, b.y - h * 0.84, h * 0.18, h * 0.45);
+      g.fillRect(b.x - h * 0.08, b.y - h * 0.4, h * 0.06, h * 0.4); g.fillRect(b.x + h * 0.02, b.y - h * 0.4, h * 0.06, h * 0.4);
+    } else if (p.type === 'oncoming') {
+      const w = 2.4 * s, h = 2.6 * s;
+      g.fillStyle = gray(0.2 * il + 0.05); g.fillRect(b.x - w / 2, b.y - h, w, h * 0.9);
+      p._screen = [proj(camZ, laneX, yaw, p.x - 0.8, z, 1.0), proj(camZ, laneX, yaw, p.x + 0.8, z, 1.0)];
+    } else if (p.type === 'ditch') {
+      const w = 6 * s, d = 1.4 * s; g.fillStyle = gray(0.05); g.beginPath(); g.ellipse(b.x, b.y, w / 2, Math.max(2, d * 0.25), 0, 0, 7); g.fill();
+    }
+  }
+  // cab: dash + pillars (fixed to vehicle, so shifted by head yaw)
+  const sh = -yaw * F;
+  g.fillStyle = gray(0.06);
+  g.beginPath(); g.moveTo(-200 + sh, H); g.lineTo(-200 + sh, 640); g.quadraticCurveTo(CX + sh, 600, W + 200 + sh, 640); g.lineTo(W + 200 + sh, H); g.closePath(); g.fill();
+  const dash = o.dash ?? 0.12;
+  for (let i = 0; i < 5; i++) { g.fillStyle = gray(dash * (i === 2 ? 1.6 : 1)); g.beginPath(); g.arc(CX - 160 + i * 80 + sh, 668, 18, 0, 7); g.fill(); }
+  g.fillStyle = gray(0.04);
+  for (const sgn of [-1, 1]) { const px = CX + sgn * 0.78 * F + sh; g.beginPath(); g.moveTo(px - 40, H); g.lineTo(px + sgn * 90 - 30, 0); g.lineTo(px + sgn * 90 + 40, 0); g.lineTo(px + 40, H); g.fill();
+    // west-coast mirror
+    const mx = CX + sgn * 0.95 * F + sh; g.fillStyle = gray(0.05); g.fillRect(mx - 22, 280, 44, 110); g.fillStyle = gray(0.2 * il); g.fillRect(mx - 16, 286, 32, 98); g.fillStyle = gray(0.04); }
+  if (o.extras) o.extras(g);
+}
+
+// compose NVG image from the world canvas onto main ctx
+function composeNVG(o = {}) {
+  const blur = o.blur || 0, nblur = o.noiseBlur || 0, gain = o.gain ?? 1, wash = o.wash || 0, nz = o.noise ?? 0.16;
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  // unaided eye: very dim night view
+  ctx.globalAlpha = 0.07 * (1 - (o.unaidedLoss || 0)); ctx.drawImage(world, 0, 0); ctx.globalAlpha = 1;
+  ctx.save(); ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI * 2); ctx.clip();
+  const filt = [];
+  if (blur > 0.05) filt.push(`blur(${blur.toFixed(2)}px)`);
+  if (Math.abs(gain - 1) > 0.01) filt.push(`brightness(${gain.toFixed(3)})`);
+  if (o.contrast) filt.push(`contrast(${o.contrast})`);
+  ctx.filter = filt.length ? filt.join(' ') : 'none';
+  ctx.drawImage(world, 0, 0); ctx.filter = 'none';
+  if (o.post) o.post(ctx);  // bright sources etc. (grayscale space)
+  ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = '#7dff8f'; ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = 'rgba(14,46,20,1)'; ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = nz; if (nblur > 0.05) ctx.filter = `blur(${nblur.toFixed(2)}px)`;
+  ctx.drawImage(NOISE[FRAME % NOISE.length], CX - R, CY - R, R * 2, R * 2); ctx.filter = 'none';
+  ctx.globalAlpha = 1;
+  if (wash > 0) { ctx.fillStyle = `rgba(200,255,205,${wash})`; ctx.fillRect(0, 0, W, H); }
+  ctx.globalCompositeOperation = 'source-over';
+  const vg = ctx.createRadialGradient(CX, CY, R * 0.55, CX, CY, R);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.75)');
+  ctx.fillStyle = vg; ctx.fillRect(CX - R, CY - R, 2 * R, 2 * R);
+  ctx.restore();
+  ctx.strokeStyle = '#000'; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(CX, CY, R + 2, 0, 7); ctx.stroke();
+}
+
+// ---------- shared drawing ----------
+function panel(x, y, w, h, fill = 'rgba(6,16,9,0.86)', stroke = 'rgba(93,255,122,0.25)') {
+  ctx.fillStyle = fill; roundRect(x, y, w, h, 10); ctx.fill(); ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke();
+}
+function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function text(s, x, y, size, color = '#d8f5dc', weight = 500, align = 'left', alpha = 1) {
+  ctx.globalAlpha = alpha; ctx.fillStyle = color; ctx.font = `${weight} ${size}px ${FONT}`; ctx.textAlign = align; ctx.textBaseline = 'alphabetic'; ctx.fillText(s, x, y); ctx.globalAlpha = 1;
+}
+function wrap(s, maxW, size, weight = 500) {
+  ctx.font = `${weight} ${size}px ${FONT}`; const words = s.split(' '), lines = []; let cur = '';
+  for (const w of words) { const t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; }
+  if (cur) lines.push(cur); return lines;
+}
+const GREEN = '#4be36a', RED = '#ff4d4d', AMBER = '#ffbf3c';
+function check(x, y, s, col = GREEN) { ctx.strokeStyle = col; ctx.lineWidth = s * 0.16; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x - s * 0.4, y); ctx.lineTo(x - s * 0.1, y + s * 0.3); ctx.lineTo(x + s * 0.45, y - s * 0.35); ctx.stroke(); }
+function cross(x, y, s, col = RED) { ctx.strokeStyle = col; ctx.lineWidth = s * 0.16; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x - s * 0.35, y - s * 0.35); ctx.lineTo(x + s * 0.35, y + s * 0.35); ctx.moveTo(x + s * 0.35, y - s * 0.35); ctx.lineTo(x - s * 0.35, y + s * 0.35); ctx.stroke(); }
+function tag(label, x, y, col, alpha = 1, size = 22) {
+  if (alpha <= 0) return; ctx.globalAlpha = alpha; ctx.font = `700 ${size}px ${FONT}`; const w = ctx.measureText(label).width + 28;
+  ctx.fillStyle = 'rgba(0,0,0,0.7)'; roundRect(x - w / 2, y - size, w, size * 1.6, 6); ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.stroke();
+  ctx.fillStyle = col; ctx.textAlign = 'center'; ctx.fillText(label, x, y + size * 0.3); ctx.globalAlpha = 1;
+}
+function mapBG() {
+  ctx.fillStyle = '#07110a'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(93,255,122,0.06)'; ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y + .5); ctx.lineTo(W, y + .5); ctx.stroke(); }
+}
+
+// M1075A1 top view, front pointing +x. (x,y) = front bumper centre. ppm = pixels per metre.
+const PLS_L = 10.8, PLS_W = 2.44;
+function plsTop(x, y, ppm, o = {}) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(o.ang || 0);
+  const L = PLS_L * ppm, Wd = PLS_W * ppm;
+  ctx.fillStyle = '#0d0d0d';
+  for (const ax of [0.95, 2.45, 6.6, 8.0, 9.4]) for (const s of [-1, 1]) ctx.fillRect(-ax * ppm - 0.6 * ppm, s * (Wd / 2) - (s > 0 ? 0.55 * ppm : -0.05 * ppm) - 0.25 * ppm, 1.2 * ppm, 0.55 * ppm);
+  ctx.fillStyle = o.body || '#5f6b45'; ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.lineWidth = 1.5;
+  roundRect(-2.7 * ppm, -Wd / 2, 2.7 * ppm, Wd, 0.3 * ppm); ctx.fill(); ctx.stroke();                    // cab
+  ctx.fillStyle = o.deck || '#4a5537'; ctx.fillRect(-L, -Wd / 2 + 0.05 * ppm, L - 3.1 * ppm, Wd - 0.1 * ppm); // flatrack
+  ctx.strokeStyle = 'rgba(0,0,0,0.35)'; for (let i = 1; i < 6; i++) { const xx = -L + i * (L - 3.1 * ppm) / 6; ctx.beginPath(); ctx.moveTo(xx, -Wd / 2); ctx.lineTo(xx, Wd / 2); ctx.stroke(); }
+  ctx.fillStyle = '#3b442c'; ctx.fillRect(-3.1 * ppm, -0.5 * ppm, 0.4 * ppm, ppm);                         // LHS hook arm
+  ctx.fillStyle = 'rgba(160,220,255,0.35)'; ctx.fillRect(-0.55 * ppm, -Wd / 2 + 0.2 * ppm, 0.35 * ppm, Wd - 0.4 * ppm); // windshield
+  if (o.ir) { ctx.fillStyle = '#eaffef'; ctx.shadowColor = '#9dffb0'; ctx.shadowBlur = 12; for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(-L + 0.1 * ppm, s * (Wd / 2 - 0.2 * ppm), Math.max(2, 0.18 * ppm), 0, 7); ctx.fill(); } ctx.shadowBlur = 0; }
+  if (o.label) { ctx.rotate(-(o.ang || 0)); text(o.label, -L / 2, -Wd / 2 - 10, 16, '#b9d9be', 600, 'center'); }
+  ctx.restore();
+}
+// side view silhouette (for title)
+function plsSide(x, y, s, col) {
+  ctx.save(); ctx.translate(x, y); ctx.fillStyle = col;
+  ctx.beginPath(); ctx.moveTo(0, -1.0 * s); ctx.lineTo(0, -3.0 * s); ctx.lineTo(0.3 * s, -3.25 * s); ctx.lineTo(2.6 * s, -3.25 * s); ctx.lineTo(2.7 * s, -1.0 * s); ctx.closePath(); ctx.fill();
+  ctx.fillRect(2.7 * s, -1.6 * s, 8.1 * s, 0.6 * s);
+  ctx.fillRect(3.0 * s, -3.6 * s, 6.6 * s, 2.0 * s);                     // container on flatrack
+  ctx.fillRect(2.75 * s, -3.0 * s, 0.35 * s, 1.4 * s);                    // hook arm
+  ctx.fillStyle = '#000'; for (const ax of [0.95, 2.45, 6.6, 8.0, 9.4]) { ctx.beginPath(); ctx.arc(ax * s, -0.6 * s, 0.6 * s, 0, 7); ctx.fill(); }
+  ctx.fillStyle = col; for (const ax of [0.95, 2.45, 6.6, 8.0, 9.4]) { ctx.beginPath(); ctx.arc(ax * s, -0.6 * s, 0.25 * s, 0, 7); ctx.fill(); }
+  ctx.restore();
+}
+
+// ---------- scenes ----------
+const SCENES = {
+  title(t, d) {
+    drawRoadWorld({ camZ: 200 + t * 9 });
+    composeNVG({ gain: smooth(0, 2, t) });
+    const a = smooth(0.6, 1.6, t) * (1 - smooth(d - 1.2, d - 0.2, t));
+    ctx.globalAlpha = a * 0.82; ctx.fillStyle = '#000'; ctx.fillRect(0, 150, W, 300); ctx.globalAlpha = 1;
+    plsSide(890 - (1 - smooth(0.6, 3, t)) * 120, 420, 26, `rgba(125,255,145,${a * 0.85})`);
+    text('NIGHT VISION DRIVING', 90, 240, 26, '#7dff8f', 700, 'left', a);
+    text("Do's & Don'ts", 86, 318, 72, '#eaffef', 800, 'left', a);
+    text('AN/PVS-14  ·  M1075A1 Palletized Load System', 90, 368, 26, '#c9e8cd', 500, 'left', a);
+    text('IAW AR 600-55, Army Driver and Operator Standardization Program', 90, 404, 20, '#88a98d', 500, 'left', a);
+  },
+
+  reg(t, d) {
+    mapBG();
+    text('AR 600-55 — NVD driver path', 80, 120, 40, '#eaffef', 800, 'left', reveal(0.2));
+    text('What has to be true before you drive the PLS on goggles', 80, 156, 22, '#88a98d', 500, 'left', reveal(0.4));
+    const steps = [
+      ['1', 'Licensed on M1075A1', 'Valid license for the vehicle first', 1],
+      ['2', 'NVD academics', 'Device, limitations, hazards', 2],
+      ['3', 'Hands-on PVS-14', 'PMCS, mount, focus', 2],
+      ['4', 'Night practical', 'Supervised, per TC 21-305-2', 2],
+      ['5', 'Annotated', 'NVD qual on DA Form 5984-E', 3],
+      ['6', 'Stay current', 'Unit sustainment program', 4],
+    ];
+    const bw = 172, gap = 22, x0 = (W - (bw * 6 + gap * 5)) / 2, y0 = 260;
+    steps.forEach((s, i) => {
+      const at = sStart(s[3]) + (s[3] === 2 ? (i - 1) * 1.6 : 0.3);
+      const a = reveal(at, 0.6); if (a <= 0) return;
+      const x = x0 + i * (bw + gap), y = y0 + (1 - a) * 30;
+      ctx.globalAlpha = a; panel(x, y, bw, 220); ctx.globalAlpha = 1;
+      ctx.globalAlpha = a; ctx.fillStyle = i === 4 ? GREEN : '#1f4a2a'; ctx.beginPath(); ctx.arc(x + bw / 2, y + 52, 28, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+      text(s[0], x + bw / 2, y + 62, 28, '#eaffef', 800, 'center', a);
+      wrap(s[1], bw - 24, 21, 700).forEach((l, k) => text(l, x + bw / 2, y + 120 + k * 26, 21, '#eaffef', 700, 'center', a));
+      wrap(s[2], bw - 24, 16).forEach((l, k) => text(l, x + bw / 2, y + 178 + k * 20, 16, '#9dbba2', 500, 'center', a));
+      if (i < 5) { ctx.globalAlpha = a; ctx.fillStyle = '#2f7a42'; ctx.beginPath(); const ax = x + bw + gap / 2; ctx.moveTo(ax - 6, y + 100); ctx.lineTo(ax + 6, y + 110); ctx.lineTo(ax - 6, y + 120); ctx.fill(); ctx.globalAlpha = 1; }
+    });
+  },
+
+  license(t, d) {
+    mapBG();
+    const a = reveal(0.2, 0.6), x = 250, y = 140 + (1 - a) * 20;
+    ctx.globalAlpha = a; panel(x, y, 780, 380, '#e9e4d2', '#9c9478'); ctx.globalAlpha = 1;
+    text('OPERATOR LICENSE RECORD  (training example)', x + 30, y + 50, 22, '#2b2a22', 800, 'left', a);
+    text('Ref: DA Form 5984-E', x + 30, y + 78, 16, '#5d5a4a', 500, 'left', a);
+    ctx.globalAlpha = a; ctx.fillStyle = '#c9c2a8'; ctx.fillRect(x + 30, y + 100, 720, 2); ctx.globalAlpha = 1;
+    const rows = [['Vehicle', 'M1075A1 PLS'], ['Qualified — day', 'YES'], ['Qualified — night (blackout)', 'YES'], ['NVD qualified (AN/PVS-14)', '']];
+    rows.forEach((r, i) => {
+      const yy = y + 145 + i * 52; text(r[0], x + 40, yy, 22, '#2b2a22', 600, 'left', a); text(r[1], x + 520, yy, 22, '#2b2a22', 700, 'left', a);
+      ctx.globalAlpha = a * 0.5; ctx.fillStyle = '#c9c2a8'; ctx.fillRect(x + 30, yy + 16, 720, 1); ctx.globalAlpha = 1;
+    });
+    const fixAt = sStart(2) + 0.8, bad = 1 - reveal(fixAt + 2.2, 0.4);
+    const blink = reveal(sStart(0) + 1.2, 0.3);
+    // empty NVD cell
+    ctx.globalAlpha = a * blink * bad; ctx.strokeStyle = RED; ctx.lineWidth = 3; ctx.setLineDash([8, 6]); ctx.strokeRect(x + 505, y + 278, 200, 38); ctx.setLineDash([]); ctx.globalAlpha = 1;
+    text('— NOT ANNOTATED —', x + 605, y + 304, 18, RED, 800, 'center', a * blink * bad);
+    // stamp
+    const st = reveal(sStart(1) + 0.4, 0.25) * bad;
+    if (st > 0) { ctx.save(); ctx.translate(x + 560, y + 70); ctx.rotate(-0.12); ctx.scale(1.6 - 0.6 * st, 1.6 - 0.6 * st); ctx.globalAlpha = st * 0.9; ctx.strokeStyle = RED; ctx.lineWidth = 5; roundRect(-170, -32, 340, 64, 8); ctx.stroke(); ctx.globalAlpha = 1; text('NOT NVD QUALIFIED', 0, 12, 30, RED, 900, 'center', st * 0.9); ctx.restore(); }
+    const fix = reveal(fixAt + 2.2, 0.5);
+    text('YES', x + 520, y + 301, 22, '#1f7a34', 800, 'left', fix); if (fix > 0) { ctx.globalAlpha = fix; check(x + 600, y + 294, 34, '#1f7a34'); ctx.globalAlpha = 1; }
+    tag('NO ANNOTATION = NO NVD DRIVING', 640, 600, RED, reveal(fixAt, 0.4) * bad, 26);
+    tag('QUALIFIED & ANNOTATED — CLEARED FOR NVD DRIVING', 640, 600, GREEN, fix, 24);
+  },
+
+  pmcs(t, d) {
+    mapBG();
+    // PVS-14 diagram (side view)
+    const ox = 120, oy = 360, hl = [1, 2, 3, 4].map(i => reveal(sStart(i), 0.3) * (1 - reveal(sStart(i + 1 > 4 ? 9 : i + 1), 0.3)));
+    const glow = k => `rgba(93,255,122,${0.15 + 0.85 * hl[k]})`;
+    ctx.lineWidth = 3;
+    // mount
+    ctx.fillStyle = '#26302a'; ctx.strokeStyle = glow(2); roundRect(ox + 150, oy - 150, 150, 70, 10); ctx.fill(); ctx.stroke();
+    ctx.fillRect(ox + 210, oy - 90, 30, 40);
+    // body
+    ctx.fillStyle = '#2f3a33'; ctx.strokeStyle = 'rgba(93,255,122,0.25)'; roundRect(ox + 60, oy - 60, 320, 120, 30); ctx.fill(); ctx.stroke();
+    // objective
+    ctx.fillStyle = '#1b231e'; ctx.strokeStyle = glow(1); roundRect(ox + 380, oy - 70, 70, 140, 14); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#4a7d6a'; ctx.fillRect(ox + 446, oy - 52, 8, 104);
+    // eyepiece
+    ctx.strokeStyle = glow(3); ctx.fillStyle = '#1b231e'; roundRect(ox, oy - 50, 64, 100, 18); ctx.fill(); ctx.stroke();
+    if (hl[3] > 0.2 && (Math.floor(t * 3) % 2 === 0)) { ctx.fillStyle = '#ff5b5b'; ctx.beginPath(); ctx.arc(ox - 6, oy - 28, 6, 0, 7); ctx.fill(); }
+    // battery cap
+    ctx.strokeStyle = glow(0); ctx.fillStyle = '#1f2722'; ctx.beginPath(); ctx.arc(ox + 220, oy + 76, 30, 0, 7); ctx.fill(); ctx.stroke();
+    text('AN/PVS-14', ox + 220, oy + 160, 26, '#cfe9d2', 800, 'center');
+    text('Battery', ox + 220, oy + 126, 15, '#9dbba2', 600, 'center', 0.3 + 0.7 * hl[0]);
+    text('Objective lens', ox + 415, oy - 86, 15, '#9dbba2', 600, 'center', 0.3 + 0.7 * hl[1]);
+    text('Mount', ox + 225, oy - 162, 15, '#9dbba2', 600, 'center', 0.3 + 0.7 * hl[2]);
+    text('Eyepiece', ox + 32, oy - 66, 15, '#9dbba2', 600, 'center', 0.3 + 0.7 * hl[3]);
+    // checklist
+    const items = ['Battery installed + spare carried', 'Lenses: no cracks, scratches, dirt', 'Mount locks; device stable on helmet', 'Low-battery indicator checked'];
+    panel(700, 170, 500, 370);
+    text('Operator PMCS — before every mission', 725, 212, 21, '#eaffef', 700);
+    items.forEach((s, i) => { const a = reveal(sStart(i + 1) + 0.3, 0.4); const y = 270 + i * 66; ctx.globalAlpha = 0.25 + 0.75 * a; ctx.strokeStyle = '#3c7a4b'; ctx.lineWidth = 2; ctx.strokeRect(725, y - 22, 30, 30); ctx.globalAlpha = 1; if (a > 0) { ctx.globalAlpha = a; check(740, y - 7, 26); ctx.globalAlpha = 1; } text(s, 772, y, 20, '#d8f5dc', 500, 'left', 0.35 + 0.65 * a); });
+  },
+
+  focus(t, d) {
+    const di = smooth(sStart(1) + 0.8, sEnd(1), t), ob = smooth(sStart(2) + 1.2, sEnd(2), t);
+    const bad = t > sStart(3) ? smooth(sStart(3), sStart(3) + 0.8, t) * (1 - smooth(d - 1.5, d - 0.5, t)) : 0;
+    drawRoadWorld({ camZ: 900 + t * 5, objects: [{ type: 'stake', z: 900 + d * 5 + 60, x: 4.8 }] });
+    const blurW = lerp(lerp(7, 5.5, di), 0, ob) + bad * 5, blurN = lerp(4, 0, di);
+    composeNVG({ blur: blurW, noiseBlur: blurN, noise: 0.18 });
+    // gauges
+    panel(950, 470, 220, 76); text('2  OBJECTIVE FOCUS', 1060, 500, 16, t > sStart(2) && t < sStart(3) ? '#eaffef' : '#7f9a84', 700, 'center'); ctx.fillStyle = '#1c3b24'; ctx.fillRect(970, 515, 180, 10); ctx.fillStyle = GREEN; ctx.fillRect(970, 515, 180 * ob, 10);
+    panel(950, 560, 220, 76); text('1  EYEPIECE DIOPTER', 1060, 590, 16, t > sStart(1) && t < sStart(2) ? '#eaffef' : '#7f9a84', 700, 'center'); ctx.fillStyle = '#1c3b24'; ctx.fillRect(970, 605, 180, 10); ctx.fillStyle = GREEN; ctx.fillRect(970, 605, 180 * di, 10);
+    tag('FOCUSED AT DISTANCE', 160, 120, GREEN, ob * (1 - bad), 18);
+    tag('OUT OF FOCUS = SHORT DETECTION RANGE', 640, 90, RED, bad, 20);
+  },
+
+  crew(t, d) {
+    mapBG();
+    const ppm = 46, fx = 1010, fy = 245;
+    // road
+    ctx.fillStyle = '#16231a'; ctx.fillRect(0, fy - 110, W, 220);
+    plsTop(fx, fy, ppm, {});
+    // occupants
+    const seats = [[-1.6, -0.6, 'DRIVER', 0], [-1.6, 0.6, 'A-DRIVER / TC', 1.3]];
+    for (const [sx, sy, lbl, ph] of seats) {
+      const px = fx + sx * ppm, py = fy + sy * ppm;
+      const ang = 0.55 * Math.sin(t * 0.9 + ph) + (sy > 0 ? 0.35 : -0.15);
+      ctx.fillStyle = 'rgba(93,255,122,0.18)'; ctx.beginPath(); ctx.moveTo(px, py); ctx.arc(px, py, 560, ang - 0.349, ang + 0.349); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#eaffef'; ctx.beginPath(); ctx.arc(px, py, 9, 0, 7); ctx.fill();
+      ctx.fillStyle = GREEN; ctx.fillRect(px + 6, py - 3, 8, 6);
+    }
+    text('DRIVER (NVD)', fx - 60, fy - 130, 16, '#d8f5dc', 700, 'center'); text('A-DRIVER / TC (NVD)', fx - 60, fy + 148, 16, '#d8f5dc', 700, 'center');
+    const ra = reveal(sStart(1) + 1.0, 0.6);
+    ctx.globalAlpha = ra * (0.35 + 0.15 * Math.sin(t * 5)); ctx.fillStyle = AMBER; ctx.fillRect(fx - PLS_L * ppm - 10, fy + PLS_W * ppm / 2 + 4, PLS_L * ppm + 10, 50); ctx.globalAlpha = 1;
+    text('Right side — A-driver watches this', fx - PLS_L * ppm / 2, fy + PLS_W * ppm / 2 + 36, 18, AMBER, 700, 'center', ra);
+    panel(40, 400, 440, 168);
+    text('Crew brief before you roll', 64, 434, 21, '#eaffef', 700, 'left', reveal(sStart(2)));
+    ['Route & checkpoints', 'Known hazards', 'Risk assessment & speed', 'Crew calls / comms'].forEach((s, i) => { const a = reveal(sStart(2) + 0.6 + i * 0.7, 0.3); if (a > 0) { ctx.globalAlpha = a; check(80, 458 + i * 28, 18); ctx.globalAlpha = 1; } text(s, 104, 465 + i * 28, 19, '#d8f5dc', 500, 'left', 0.3 + 0.7 * a); });
+  },
+
+  whitelight(t, d) {
+    const on = smooth(sStart(0) + 1.5, sStart(0) + 1.9, t), off = smooth(sStart(2) + 0.6, sStart(2) + 1.6, t);
+    const w = on * (1 - off);
+    const dashB = lerp(0.12, 0.7, smooth(sStart(1) + 1.6, sStart(1) + 2.2, t)) * (1 - off) + 0.05 * off;
+    drawRoadWorld({ camZ: 1400 + t * 8, dash: dashB, objects: [{ type: 'truck', z: 1400 + 8 * 13, x: 1.4 }] });
+    composeNVG({ wash: w * 0.78, noise: 0.16 + w * 0.35, contrast: 1 - w * 0.6, unaidedLoss: w,
+      post: c => { if (w > 0) { const g = c.createRadialGradient(470, 640, 10, 470, 640, 420); g.addColorStop(0, `rgba(255,255,255,${w})`); g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(0, 0, W, H); } } });
+    tag('WHITE LIGHT IN CAB — IMAGE WASHED OUT', 640, 92, RED, smooth(0.2, 0.5, w), 20);
+    // dark adaptation meter (unaided eye)
+    panel(990, 470, 250, 96); text('Unaided-eye dark adaptation', 1115, 500, 15, '#c9e8cd', 700, 'center');
+    const da = clamp(1 - smooth(sStart(0) + 1.5, sStart(0) + 4, t) + smooth(sStart(2) + 2, d + 25, t) * 0.4, 0, 1);
+    ctx.fillStyle = '#1c3b24'; ctx.fillRect(1010, 520, 210, 14); ctx.fillStyle = da > 0.5 ? GREEN : RED; ctx.fillRect(1010, 520, 210 * da, 14);
+    text(da > 0.5 ? 'GOOD' : 'LOST — takes many minutes to recover', 1115, 554, 13, da > 0.5 ? GREEN : RED, 700, 'center');
+    tag('DIM PANEL · NVG-COMPATIBLE LIGHT ONLY', 640, 92, GREEN, off, 20);
+  },
+
+  scan(t, d) {
+    const s2 = sStart(2), yaw = t < s2 ? 0 : (() => { const k = t - s2; const seq = [[0, 0], [1.2, -0.62], [2.6, -0.62], [3.8, 0], [4.6, 0], [5.8, 0.62], [7.6, 0.62], [8.8, 0]]; for (let i = 1; i < seq.length; i++) if (k < seq[i][0]) return lerp(seq[i - 1][1], seq[i][1], smooth(seq[i - 1][0], seq[i][0], k)); return 0; })();
+    const camZ = 2100 + t * 6;
+    drawRoadWorld({ camZ, yaw, objects: [{ type: 'person', z: camZ + 24, x: 6.5 }, { type: 'truck', z: 2100 + 6 * 30 + 32, x: -9 }] });
+    composeNVG({ noise: 0.17 });
+    // inset: FOV comparison
+    const ia = reveal(sStart(1), 0.5); if (ia > 0) {
+      ctx.globalAlpha = ia; panel(1000, 380, 260, 200); ctx.globalAlpha = 1;
+      ctx.save(); roundRect(1000, 380, 260, 200, 10); ctx.clip();
+      const px = 1130, py = 570;
+      ctx.globalAlpha = ia * 0.25; ctx.fillStyle = '#9dbba2'; ctx.beginPath(); ctx.moveTo(px, py); ctx.arc(px, py, 130, -Math.PI / 2 - 1.65, -Math.PI / 2 + 1.65); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = ia * 0.85; ctx.fillStyle = GREEN; ctx.beginPath(); ctx.moveTo(px, py); ctx.arc(px, py, 130, -Math.PI / 2 + yaw * 0.9 - 0.349, -Math.PI / 2 + yaw * 0.9 + 0.349); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1; ctx.restore();
+      text('PVS-14: 40°', px, 405, 17, GREEN, 800, 'center', ia); text('unaided: ~190°', px, 424, 14, '#9dbba2', 600, 'center', ia);
+    }
+    const look = yaw < -0.4 ? 'LEFT' : yaw > 0.4 ? 'RIGHT' : 'CENTER';
+    tag('SCAN: ' + look, 160, 120, GREEN, reveal(s2, 0.3), 18);
+    tag('HAZARD FOUND', 640, 92, AMBER, yaw > 0.5 || yaw < -0.5 ? 1 : 0, 20);
+  },
+
+  overdrive(t, d) {
+    mapBG();
+    const phase2 = sStart(2) - 0.3, fast = t < phase2, lt = fast ? t - 0.4 : t - phase2;
+    const mph = fast ? 50 : 25, v0 = mph * 0.44704, react = 1.5, dec = 4.0, det = 60, tDet = 2.4;
+    const stopDist = v0 * react + v0 * v0 / (2 * dec);
+    // kinematics
+    const pos = tt => { if (tt < tDet + react) return v0 * tt; const tb = tt - tDet - react, tStop = v0 / dec; const b = Math.min(tb, tStop); return v0 * (tDet + react) + v0 * b - 0.5 * dec * b * b; };
+    const obstacle = v0 * tDet + det; let s = pos(Math.max(0, lt)); let hit = false;
+    if (s >= obstacle - 0.5) { s = obstacle - 0.5; hit = true; }
+    const speedNow = (() => { const tt = Math.max(0, lt); if (hit) return 0; if (tt < tDet + react) return v0; return Math.max(0, v0 - dec * (tt - tDet - react)); })();
+    const ppm = 7.5, truckX = 260, roadY = 260, toX = m => truckX + (m - s) * ppm;
+    ctx.fillStyle = '#18261c'; ctx.fillRect(0, roadY - 50, W, 100);
+    ctx.strokeStyle = 'rgba(200,220,200,0.25)'; ctx.setLineDash([24, 26]); ctx.lineDashOffset = s * ppm; ctx.beginPath(); ctx.moveTo(0, roadY); ctx.lineTo(W, roadY); ctx.stroke(); ctx.setLineDash([]);
+    // NVD detection range
+    ctx.fillStyle = 'rgba(93,255,122,0.13)'; ctx.beginPath(); ctx.moveTo(truckX, roadY + 16); ctx.lineTo(truckX + det * ppm, roadY - 60); ctx.lineTo(truckX + det * ppm, roadY + 92); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = GREEN; ctx.setLineDash([6, 6]); ctx.beginPath(); ctx.moveTo(truckX + det * ppm, roadY - 70); ctx.lineTo(truckX + det * ppm, roadY + 100); ctx.stroke(); ctx.setLineDash([]);
+    text('NVD detection range', truckX + det * ppm, roadY - 80, 16, GREEN, 700, 'center');
+    // obstacle
+    const seen = lt >= tDet; const ox = toX(obstacle);
+    ctx.globalAlpha = seen ? 1 : 0.25; ctx.fillStyle = seen ? AMBER : '#5b6b5f'; roundRect(ox, roadY - 30, 26, 60, 4); ctx.fill(); ctx.globalAlpha = 1;
+    text(seen ? 'HAZARD DETECTED' : 'undetected hazard', ox + 13, roadY - 42, 15, seen ? AMBER : '#6d8070', 700, 'center');
+    plsTop(truckX, roadY + 16, ppm, { label: '' });
+    // stopping distance bar from moment of detection
+    const by = 400; ctx.fillStyle = '#1c3b24'; ctx.fillRect(truckX, by, det * ppm, 16);
+    const col = stopDist > det ? RED : GREEN; ctx.fillStyle = col; ctx.globalAlpha = 0.85; ctx.fillRect(truckX, by + 26, stopDist * ppm, 16); ctx.globalAlpha = 1;
+    text(`Detection range ≈ ${det} m`, truckX, by - 8, 16, '#9dbba2', 600);
+    text(`Stopping distance @ ${mph} mph ≈ ${Math.round(stopDist)} m  (reaction ${react}s + braking)`, truckX, by + 66, 18, col, 700);
+    panel(880, 92, 360, 96); text(`${Math.round(speedNow / 0.44704)}`, 960, 154, 52, '#eaffef', 800, 'center'); text('MPH', 960, 176, 14, '#9dbba2', 700, 'center');
+    text(fast ? 'Too fast for NVD range' : 'Speed within NVD range', 1030, 132, 18, fast ? RED : GREEN, 700); text('Illustrative values only', 1030, 158, 14, '#7f9a84', 500);
+    if (hit) { const f = (Math.floor(t * 4) % 2) ? 1 : 0.6; tag('IMPACT', ox - 20, roadY - 110, RED, f, 34); }
+    if (!fast && speedNow === 0 && lt > tDet + react) tag(`STOPPED ${Math.round(obstacle - s)} m SHORT`, ox - 60, roadY - 110, GREEN, 1, 26);
+  },
+
+  halation(t, d) {
+    const camZ = 3000 + t * 7, away = smooth(sStart(2) + 0.5, sStart(2) + 1.6, t);
+    const oz = camZ + 260 - t * 16 * (1 - 0.3 * away);
+    const car = { type: 'oncoming', z: oz, x: -2.1 };
+    drawRoadWorld({ camZ, yaw: away * 0.28, objects: [car, { type: 'person', z: 3000 + 7 * 14 + 30, x: -4.4 }] });
+    const near = clamp(1 - (oz - camZ) / 260, 0, 1), I = 0.35 + 0.65 * near;
+    composeNVG({ gain: 1 - 0.45 * I * (1 - away * 0.6), noise: 0.15,
+      post: c => { if (!car._screen) return; for (const p of car._screen) { const r = 40 + 260 * I; const g = c.createRadialGradient(p.x, p.y, 2, p.x, p.y, r); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.15, `rgba(255,255,255,${0.9 * I})`); g.addColorStop(1, 'rgba(255,255,255,0)'); c.globalCompositeOperation = 'lighter'; c.fillStyle = g; c.fillRect(0, 0, W, H); c.globalCompositeOperation = 'source-over'; } } });
+    tag('BLOOMING — SURROUNDINGS HIDDEN', 640, 92, RED, reveal(sStart(0) + 1, 0.4) * (1 - away), 20);
+    tag('LOOK AWAY · HOLD LANE · SLOW DOWN', 640, 92, GREEN, away, 20);
+  },
+
+  convoy(t, d) {
+    mapBG();
+    const ppm = 6.2, roadY = 330, scroll = t * 12;
+    ctx.fillStyle = '#18261c'; ctx.fillRect(0, roadY - 45, W, 90);
+    ctx.strokeStyle = 'rgba(200,220,200,0.25)'; ctx.setLineDash([24, 26]); ctx.lineDashOffset = scroll * ppm; ctx.beginPath(); ctx.moveTo(0, roadY); ctx.lineTo(W, roadY); ctx.stroke(); ctx.setLineDash([]);
+    const good = 75, close = smooth(sStart(1) + 0.3, sStart(1) + 2.2, t) * (1 - smooth(sStart(2) + 0.8, sStart(2) + 3, t));
+    const gap2 = lerp(good, 22, close);
+    const lead = 1180, x2 = lead - (PLS_L + good) * ppm, x3 = x2 - (PLS_L + gap2) * ppm;
+    plsTop(lead, roadY, ppm, { ir: true }); plsTop(x2, roadY, ppm, { ir: true }); plsTop(x3, roadY, ppm, { ir: true, label: 'YOU' });
+    const dim = (xa, xb, lbl, col) => { ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(xa, roadY + 60); ctx.lineTo(xb, roadY + 60); ctx.moveTo(xa, roadY + 50); ctx.lineTo(xa, roadY + 70); ctx.moveTo(xb, roadY + 50); ctx.lineTo(xb, roadY + 70); ctx.stroke(); text(lbl, (xa + xb) / 2, roadY + 90, 16, col, 700, 'center'); };
+    dim(x2 - PLS_L * ppm, lead, 'interval per convoy brief', GREEN);
+    const c2 = close > 0.5 ? RED : GREEN; dim(x3, x2 - PLS_L * ppm, close > 0.5 ? 'TOO CLOSE' : 'interval per convoy brief', c2);
+    tag('MONOCULAR = POOR DEPTH PERCEPTION', 640, 150, AMBER, reveal(sStart(1), 0.4) * (1 - reveal(sStart(2) + 1, 0.4)), 20);
+    tag('KEEP THE BRIEFED INTERVAL · NEVER TAILGATE', 640, 150, GREEN, reveal(sStart(2) + 1, 0.4), 20);
+    panel(40, 470, 440, 130); text('IR markers on the vehicle ahead', 64, 506, 19, '#eaffef', 700);
+    ctx.fillStyle = '#eaffef'; ctx.shadowColor = '#9dffb0'; ctx.shadowBlur = 18; for (const x of [120, 210]) { ctx.beginPath(); ctx.arc(x, 552, 9, 0, 7); ctx.fill(); } ctx.shadowBlur = 0;
+    text('spacing of markers grows as you close', 250, 558, 15, '#9dbba2', 600);
+  },
+
+  backing(t, d) {
+    mapBG();
+    const ppm = 30, s1 = sStart(1) - 0.2, s2 = sStart(2) + 0.2;
+    const ph = t < s1 ? 1 : t < s2 ? 2 : 3, lt = ph === 1 ? t : ph === 2 ? t - s1 : t - s2;
+    // dock area
+    ctx.fillStyle = '#16231a'; ctx.fillRect(0, 200, W, 300);
+    ctx.strokeStyle = 'rgba(255,191,60,0.5)'; ctx.setLineDash([10, 8]); ctx.strokeRect(70, 255, 380, 150); ctx.setLineDash([]);
+    text('FLATRACK DROP POINT', 260, 245, 15, AMBER, 700, 'center');
+    const rate = 1.3, obstacleX = 300, stopAt = 230 + PLS_L * ppm; // reversing at ~1.3 m/s
+    const startX = ph === 1 ? obstacleX + 24 + PLS_L * ppm + 2.2 * rate * ppm : ph === 2 ? stopAt + 2.6 * rate * ppm : stopAt + 4 * rate * ppm;
+    let travel = clamp(lt - 0.5, 0, ph === 3 ? 1.2 : 99) * rate * ppm;
+    let fx = startX - travel; let hit = false, stopped = false;
+    const rearX = () => fx - PLS_L * ppm;
+    if (ph === 1 && rearX() <= obstacleX + 24) { fx = obstacleX + 24 + PLS_L * ppm; hit = true; }
+    // guide
+    let gx = 0, gy = 0, inSight = true;
+    if (ph >= 2) {
+      if (ph === 2 && fx <= stopAt) { fx = stopAt; stopped = true; }
+      gx = rearX() - 60; gy = 430;
+      if (ph === 3) { const out = smooth(1.2, 2.2, lt); gx = lerp(rearX() - 60, rearX() + 120, out); gy = lerp(430, 470, out); inSight = out < 0.35; stopped = !inSight; }
+    }
+    if (ph === 1) { ctx.fillStyle = hit ? RED : '#6d8070'; roundRect(obstacleX - 10, 300, 34, 60, 4); ctx.fill(); text('hidden obstacle', obstacleX + 7, 290, 13, '#9dbba2', 600, 'center'); }
+    plsTop(fx, 330, ppm, {});
+    const mirX = fx - 2.0 * ppm, mirY = 330 + PLS_W * ppm / 2 + 6;
+    ctx.fillStyle = 'rgba(255,77,77,0.12)'; ctx.fillRect(rearX() - 160, 330 - PLS_W * ppm / 2 - 20, 160, PLS_W * ppm + 40);
+    text('blind zone', rearX() - 80, 330 - PLS_W * ppm / 2 - 28, 13, '#ff8a8a', 600, 'center');
+    if (ph >= 2) {
+      ctx.strokeStyle = inSight ? 'rgba(93,255,122,0.7)' : 'rgba(255,77,77,0.7)'; ctx.setLineDash([6, 6]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(mirX, mirY); ctx.lineTo(gx, gy); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#d8f5dc'; ctx.beginPath(); ctx.arc(gx, gy, 10, 0, 7); ctx.fill();
+      const wave = Math.sin(t * 6) * 0.5; ctx.strokeStyle = '#eaffef'; ctx.shadowColor = '#9dffb0'; ctx.shadowBlur = 16; ctx.lineWidth = 5;
+      for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(gx + s * 8, gy); ctx.lineTo(gx + s * (8 + 22 * Math.cos(wave)), gy - 22 * Math.sin(wave + 0.8)); ctx.stroke(); }
+      ctx.shadowBlur = 0; text('GROUND GUIDE (IR wands)', gx, gy + 34, 14, '#c9e8cd', 700, 'center');
+    }
+    if (ph === 1) tag(hit ? 'IMPACT — NO GROUND GUIDE' : 'BACKING WITHOUT A GROUND GUIDE', 640, 130, RED, 1, 22);
+    if (ph === 2) tag(stopped ? 'GUIDE SIGNALS STOP — DRIVER STOPS' : 'GROUND GUIDE IN SIGHT', 640, 130, GREEN, 1, 22);
+    if (ph === 3) tag(inSight ? 'GROUND GUIDE IN SIGHT' : 'LOST SIGHT OF GUIDE → STOP IMMEDIATELY', 640, 130, inSight ? GREEN : AMBER, 1, 22);
+  },
+
+  fatigue(t, d) {
+    const camZ = 4200 + t * 7, rest = smooth(sStart(1) - 0.2, sStart(1) + 0.6, t);
+    const drift = Math.sin(t * 0.7) * 1.2 * (1 - rest);
+    drawRoadWorld({ camZ, laneX: 1.6 + drift });
+    composeNVG({ noise: 0.17 });
+    const blinkPhase = (t * (0.4 + t * 0.06)) % 1; const lid = (1 - rest) * smooth(0.82, 0.92, blinkPhase) * (1 - smooth(0.92, 1, blinkPhase));
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H * 0.5 * lid); ctx.fillRect(0, H - H * 0.5 * lid, W, H * 0.5 * lid);
+    panel(40, 470, 240, 90); text('Hours on NVDs', 160, 500, 15, '#9dbba2', 700, 'center'); text((3.2 + t * 0.05).toFixed(1) + ' h', 160, 543, 34, rest > 0.5 ? '#eaffef' : AMBER, 800, 'center');
+    const items = ['Follow the driver rest plan', 'Rotate drivers when allowed', 'Speak up when too tired'];
+    if (rest > 0) { ctx.globalAlpha = rest * 0.8; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+      items.forEach((s, i) => { const a = reveal(sStart(1) + 0.4 + i * 1.5, 0.4); const y = 260 + i * 80; if (a > 0) { ctx.globalAlpha = a; check(420, y - 10, 36); ctx.globalAlpha = 1; } text(s, 460, y, 34, '#eaffef', 700, 'left', a); }); }
+  },
+
+  summary(t, d) {
+    mapBG();
+    const dos = ['NVD qualified & annotated (AR 600-55)', 'PMCS and focus the PVS-14', 'Drive as a crew — both on NVDs', 'Scan constantly: 40° FOV', 'Keep the briefed interval', 'Manage fatigue'];
+    const donts = ['Drive unqualified', 'Use white light in the cab', 'Overdrive your goggles', 'Stare into bright lights', 'Back without a ground guide'];
+    panel(60, 80, 560, 560); panel(660, 80, 560, 560);
+    text('DO', 90, 140, 40, GREEN, 900); text("DON'T", 690, 140, 40, RED, 900);
+    const s1 = sStart(1), s2 = sStart(2), l1 = sEnd(1) - s1, l2 = sEnd(2) - s2;
+    dos.forEach((s, i) => { const a = reveal(s1 + 0.6 + i * (l1 - 0.6) / dos.length, 0.35); const y = 210 + i * 70; if (a > 0) { ctx.globalAlpha = a; check(108, y - 9, 30); ctx.globalAlpha = 1; } wrap(s, 440, 22, 600).forEach((l, k) => text(l, 140, y + k * 26, 22, '#eaffef', 600, 'left', a)); });
+    donts.forEach((s, i) => { const a = reveal(s2 + 0.6 + i * (l2 - 0.6) / donts.length, 0.35); const y = 210 + i * 70; if (a > 0) { ctx.globalAlpha = a; cross(708, y - 9, 30); ctx.globalAlpha = 1; } text(s, 740, y, 22, '#eaffef', 600, 'left', a); });
+  },
+
+  end(t, d) {
+    drawRoadWorld({ camZ: 5000 + t * 6 });
+    composeNVG({ gain: 1 - smooth(d - 3, d, t) });
+    ctx.globalAlpha = 0.75; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+    const a = reveal(0.3, 0.8) * (1 - smooth(d - 1.5, d, t));
+    text('Train as you fight. Drive to standard.', 640, 280, 46, '#eaffef', 800, 'center', a);
+    const refs = ['AR 600-55  — Army Driver and Operator Standardization Program', 'TC 21-305-2  — Training Program for Night Vision Goggle Driving Operations', 'M1075A1 PLS operator TM  ·  AN/PVS-14 operator TM  ·  Unit SOP'];
+    refs.forEach((s, i) => text(s, 640, 360 + i * 36, 20, '#c9e8cd', 500, 'center', a * reveal(1.0 + i * 0.4)));
+    text('Training aid only. Always verify against the current publications and your unit SOP.', 640, 520, 16, '#7f9a84', 500, 'center', a * reveal(2.5));
+  },
+};
+
+// ---------- overlays ----------
+function overlays(sc, lt) {
+  if (sc.type !== 'title' && sc.type !== 'end') {
+    const a = smooth(0, 0.5, lt);
+    ctx.globalAlpha = a;
+    const kind = sc.kind, col = kind === 'do' ? GREEN : kind === 'dont' ? RED : '#7dff8f';
+    let x = 28;
+    if (kind !== 'info') {
+      const lab = kind === 'do' ? 'DO' : "DON'T"; ctx.font = `900 24px ${FONT}`; const w = ctx.measureText(lab).width + 60;
+      ctx.fillStyle = col; roundRect(x, 22, w, 44, 8); ctx.fill();
+      ctx.fillStyle = '#04100a'; ctx.textAlign = 'left'; ctx.fillText(lab, x + 46, 53);
+      if (kind === 'do') check(x + 24, 44, 26, '#04100a'); else cross(x + 24, 44, 24, '#04100a');
+      x += w + 14;
+    }
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.font = `800 26px ${FONT}`; const tw = ctx.measureText(sc.title).width + 28;
+    roundRect(x, 22, tw, 44, 8); ctx.fill(); text(sc.title, x + 14, 53, 26, '#eaffef', 800);
+    if (sc.ref) { ctx.font = `600 15px ${FONT}`; const rw = ctx.measureText(sc.ref).width + 24; ctx.fillStyle = 'rgba(0,0,0,0.6)'; roundRect(W - 28 - rw, 28, rw, 32, 6); ctx.fill(); text(sc.ref, W - 28 - rw / 2, 50, 15, '#9dbba2', 600, 'center'); }
+    ctx.globalAlpha = 1;
+  }
+  // caption
+  let cur = null;
+  for (const s of sc.sentences) if (lt >= s.start - 0.15 && lt <= s.start + s.dur + 0.35) cur = s;
+  if (cur) {
+    const lines = wrap(cur.text, 1040, 25, 500), lh = 33, bh = lines.length * lh + 22, by = H - 22 - bh;
+    ctx.fillStyle = 'rgba(0,0,0,0.72)'; roundRect(100, by, 1080, bh, 10); ctx.fill();
+    lines.forEach((l, i) => text(l, 640, by + 36 + i * lh, 25, '#f2fff3', 500, 'center'));
+  }
+  // progress
+  const T = TL.total, now = sc.start + lt;
+  ctx.fillStyle = 'rgba(93,255,122,0.15)'; ctx.fillRect(0, H - 4, W, 4); ctx.fillStyle = 'rgba(93,255,122,0.7)'; ctx.fillRect(0, H - 4, W * now / T, 4);
+}
+
+function renderAt(T) {
+  T = clamp(T, 0, TL.total - 1e-3);
+  let sc = TL.scenes[TL.scenes.length - 1];
+  for (const s of TL.scenes) if (T >= s.start && T < s.start + s.dur) { sc = s; break; }
+  SC = sc; LT = T - sc.start;
+  ctx.save(); SCENES[sc.type](LT, sc.dur); ctx.restore();
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.filter = 'none';
+  // scene transitions: quick fade through black
+  const fin = 1 - smooth(0, 0.45, LT), fout = smooth(sc.dur - 0.35, sc.dur, LT);
+  const f = Math.max(sc === TL.scenes[0] ? 0 : fin, sc === TL.scenes[TL.scenes.length - 1] ? 0 : fout);
+  if (f > 0) { ctx.fillStyle = `rgba(0,0,0,${f})`; ctx.fillRect(0, 0, W, H); }
+  overlays(sc, LT);
+}
+window.renderFrame = function (T, frame) { FRAME = frame ?? Math.floor(T * 30); renderAt(T); };
+
+// ---------- player ----------
+if (location.search.includes('render')) document.body.classList.add('render');
+else {
+  const aud = document.getElementById('aud'), btn = document.getElementById('play'), seek = document.getElementById('seek'), tc = document.getElementById('tc');
+  seek.max = TL.total; let playing = false, t0 = 0, base = 0;
+  const now = () => playing ? base + (performance.now() - t0) / 1000 : base;
+  const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  btn.onclick = () => { if (playing) { base = now(); playing = false; aud.pause(); btn.textContent = 'Play'; } else { if (base >= TL.total - 0.1) base = 0; playing = true; t0 = performance.now(); aud.currentTime = base; aud.play().catch(() => {}); btn.textContent = 'Pause'; } };
+  seek.oninput = () => { base = +seek.value; t0 = performance.now(); aud.currentTime = base; };
+  (function loop() { const T = now(); if (T >= TL.total) { playing = false; base = TL.total; btn.textContent = 'Play'; } FRAME++; renderAt(T); seek.value = T; tc.textContent = fmt(T) + ' / ' + fmt(TL.total); requestAnimationFrame(loop); })();
+}
+</script>
+</body>
+</html>
