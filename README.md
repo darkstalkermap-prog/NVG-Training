@@ -27,15 +27,20 @@ An NVG simulation of Do's and Don'ts: **AN/PVS-14** monocular night vision devic
 
 ## How it's built
 - `sim/scenes.json` — the script: scene order, DO/DON'T type, on-screen title, references, narration text. Edit this to change wording.
-- `sim/build_audio.py` — text-to-speech (espeak-ng + MBROLA `us2`), fits the total to 300 s, writes `build/narration.wav` and `sim/timeline.js` (sentence timings for captions).
+- `sim/build_audio.py` — neural text-to-speech (Kokoro, voice `am_michael`; falls back to espeak-ng if the model isn't present), fits the total to 300 s, writes `build/narration.wav` and `sim/timeline.js` (sentence timings for captions).
 - `sim/index.html` — the canvas simulation (NVG tube view with noise/blur/blooming, top-down PLS scenes). Open it in a browser to scrub through interactively.
 - `sim/build_artifact.py` — bundles the player, timeline and narration into `docs/index.html`.
 - `sim/render.js` — renders every frame deterministically with Playwright/Chromium and encodes the MP4 with ffmpeg (narration + low engine rumble).
 
 ## Rebuild
 ```bash
-sudo apt-get install -y espeak-ng mbrola mbrola-us2 ffmpeg
-pip install numpy && npm install playwright
+sudo apt-get install -y ffmpeg espeak-ng
+pip install numpy kokoro-onnx soundfile && npm install playwright
+# Kokoro voice model (~350 MB, git-ignored):
+mkdir -p models && cd models
+curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+cd ..
 python3 sim/build_audio.py
 python3 sim/build_artifact.py && cp build/NVG-Sim.html docs/index.html
 node sim/render.js            # --fps 30 --workers 4 ; --stills 10,60 for preview JPGs in build/
