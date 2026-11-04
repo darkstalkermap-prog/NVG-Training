@@ -3,6 +3,8 @@ An NVG simulation of Do's and Don'ts: **AN/PVS-14** monocular night vision devic
 
 **Video:** [`NVG_PVS-14_PLS_Dos_and_Donts.mp4`](NVG_PVS-14_PLS_Dos_and_Donts.mp4) — 5:00, 1280x720, 30 fps, narrated with captions.
 
+**Interactive player:** [`docs/index.html`](docs/index.html) is a single self-contained page (simulation + narration). GitHub shows `.html` files as source, so to play it in a browser either download it and open it locally, or turn on GitHub Pages (Settings → Pages → Deploy from a branch → this branch, `/docs` folder). The page will then be at `https://darkstalkermap-prog.github.io/NVG-Training/`.
+
 | Time | Segment |
 |------|---------|
 | 0:00 | Title |
@@ -27,6 +29,7 @@ An NVG simulation of Do's and Don'ts: **AN/PVS-14** monocular night vision devic
 - `sim/scenes.json` — the script: scene order, DO/DON'T type, on-screen title, references, narration text. Edit this to change wording.
 - `sim/build_audio.py` — text-to-speech (espeak-ng + MBROLA `us2`), fits the total to 300 s, writes `build/narration.wav` and `sim/timeline.js` (sentence timings for captions).
 - `sim/index.html` — the canvas simulation (NVG tube view with noise/blur/blooming, top-down PLS scenes). Open it in a browser to scrub through interactively.
+- `sim/build_artifact.py` — bundles the player, timeline and narration into `docs/index.html`.
 - `sim/render.js` — renders every frame deterministically with Playwright/Chromium and encodes the MP4 with ffmpeg (narration + low engine rumble).
 
 ## Rebuild
@@ -34,5 +37,6 @@ An NVG simulation of Do's and Don'ts: **AN/PVS-14** monocular night vision devic
 sudo apt-get install -y espeak-ng mbrola mbrola-us2 ffmpeg
 pip install numpy && npm install playwright
 python3 sim/build_audio.py
+python3 sim/build_artifact.py && cp build/NVG-Sim.html docs/index.html
 node sim/render.js            # --fps 30 --workers 4 ; --stills 10,60 for preview JPGs in build/
 ```
