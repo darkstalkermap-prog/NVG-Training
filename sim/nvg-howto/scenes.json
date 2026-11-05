@@ -1,0 +1,133 @@
+{
+ "target_seconds": 300,
+ "scenes": [
+  {
+   "id": "title",
+   "type": "title",
+   "kind": "info",
+   "title": "NVG How-To",
+   "ref": "",
+   "text": "How to put on night vision goggles. This video shows how to mount the AN/PVS-14 on your helmet, how to check the mount, what night vision does to your eyes, and why it is worth doing right."
+  },
+  {
+   "id": "benefits",
+   "type": "benefits",
+   "kind": "info",
+   "title": "Why Night Vision",
+   "ref": "TC 21-305-2",
+   "text": "Night vision lets you see and drive without white light. You can spot terrain, obstacles, and people in near darkness, keep light discipline, and see infrared markers and signals. Because the PVS-14 is a monocular, your other eye stays free for the mirrors, the instruments, and as a backup."
+  },
+  {
+   "id": "parts",
+   "type": "parts",
+   "kind": "info",
+   "title": "Know the Equipment",
+   "ref": "AN/PVS-14 Operator TM",
+   "text": "Know the parts. The helmet carries a front bracket, called the shroud. The helmet mount locks into the shroud, and the PVS-14 locks into the mount. A lanyard ties the device to the helmet, and a counterweight on the back balances the load."
+  },
+  {
+   "id": "inspect",
+   "type": "inspect",
+   "kind": "do",
+   "title": "Inspect Before You Mount",
+   "ref": "Operator TM · PCC",
+   "text": "Do inspect everything first. Check the shroud screws are tight and the shroud is not cracked. Check the mount for cracks, bent parts, and worn locking points, and make sure every adjustment knob moves and locks. Then run PMCS on the PVS-14 itself. Turn in any damaged part. Don't tape it or improvise a fix."
+  },
+  {
+   "id": "mount",
+   "type": "mount",
+   "kind": "do",
+   "title": "Attach the Mount",
+   "ref": "Operator TM",
+   "text": "Attach the mount to the shroud. Line it up, push it in until it locks, and listen for the click. Then pull on it firmly. If it moves or comes out, it is not locked. Check it again every time the helmet comes off and goes back on."
+  },
+  {
+   "id": "device",
+   "type": "device",
+   "kind": "do",
+   "title": "Attach the PVS-14",
+   "ref": "Operator TM",
+   "text": "Next, slide the PVS-14 into the mount until it locks, and pull test it the same way. Attach the lanyard every time, so a dropped device hangs from your helmet instead of hitting the ground. Make sure the battery cap is tight before you go."
+  },
+  {
+   "id": "fit",
+   "type": "fit",
+   "kind": "do",
+   "title": "Fit the Helmet",
+   "ref": "Unit SOP",
+   "text": "Put the helmet on and tighten the chin strap and the retention system. A loose helmet means a moving image. Add the counterweight if one is issued, so the helmet does not tip forward. Push the helmet by hand. It should not slide on your head."
+  },
+  {
+   "id": "adjust",
+   "type": "adjust",
+   "kind": "do",
+   "title": "Adjust the Position",
+   "ref": "Operator TM",
+   "text": "Lower the device in front of your eye. Use the eye your training or unit SOP specifies, usually your dominant eye. Adjust the height, then slide it in or out until you see the full circle, without the eyecup pressing on your eye. Tilt it so the image is level."
+  },
+  {
+   "id": "focus",
+   "type": "focus",
+   "kind": "do",
+   "title": "Power On and Focus",
+   "ref": "TC 21-305-2",
+   "text": "Turn the device on in the dark, or with the daylight cover in place. Focus the eyepiece diopter first, until the image noise is sharp, then focus the objective lens on something at driving distance. If you wear glasses or issued inserts, focus with them on."
+  },
+  {
+   "id": "shake",
+   "type": "shake",
+   "kind": "do",
+   "title": "Do the Shake Test",
+   "ref": "PCC",
+   "text": "Now do the shake test. Nod and turn your head firmly. The image should stay steady and the device should not sag or shift. If it moves, take it off, find the problem, and fix it before you drive."
+  },
+  {
+   "id": "loose",
+   "type": "loose",
+   "kind": "dont",
+   "title": "Drive With a Loose Mount",
+   "ref": "Unit SOP",
+   "text": "Don't drive with a loose mount. A sagging device bounces the image, pulls your attention off the road, and strains your neck. A device that falls can hit your face or eye, and a lost sensitive item stops the mission."
+  },
+  {
+   "id": "eyes",
+   "type": "eyes",
+   "kind": "info",
+   "title": "What NVGs Do to Your Eyes",
+   "ref": "TC 21-305-2",
+   "text": "Here is what night vision does to your eyes. Long use causes eye strain, fatigue, and headaches. You see less detail and poor depth through the tube. Your two eyes see different images, which takes effort. After you take the device off, colors may look shifted for a short time, and the aided eye needs time to adjust to the dark. These effects are normally temporary."
+  },
+  {
+   "id": "protect",
+   "type": "protect",
+   "kind": "do",
+   "title": "Protect Your Eyes",
+   "ref": "Unit SOP · Medical",
+   "text": "Do protect your eyes. Take breaks, and follow the rest plan. Keep the eyecup clean, and clean it before sharing a device. Never look at a laser, with or without night vision. If you have eye pain, blurred vision, or headaches that do not go away, report it to medical."
+  },
+  {
+   "id": "stow",
+   "type": "stow",
+   "kind": "do",
+   "title": "Stow and Remove",
+   "ref": "Operator TM · Unit SOP",
+   "text": "To stow, flip the device up and turn it off. To remove it, unlock it from the mount, put the lens caps on, and take out the battery for storage. Account for the device, and turn it in according to your unit SOP. Never carry the helmet by the mount or the device."
+  },
+  {
+   "id": "summary",
+   "type": "summary",
+   "kind": "info",
+   "title": "Recap",
+   "ref": "",
+   "text": "To recap. Inspect the shroud and mount, lock in the mount and the device, and pull test both. Attach the lanyard, tighten the helmet, and add the counterweight. Adjust and focus, do the shake test, and never drive with a loose mount. Protect your eyes, and stow and account for the device."
+  },
+  {
+   "id": "end",
+   "type": "end",
+   "kind": "info",
+   "title": "See the Night",
+   "ref": "",
+   "text": "Mount it right, and the night is yours. Verify these steps against the AN/PVS-14 and helmet mount operator manuals, TC 21-305-2, and your unit SOP."
+  }
+ ]
+}
