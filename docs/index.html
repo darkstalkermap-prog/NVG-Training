@@ -442,6 +442,7 @@ window.TIMELINE = {
 };
 </script>
 <script>
+// Shared NVG simulation engine: world renderer, NVG compositor, drawing helpers, overlays, player.
 "use strict";
 const W = 1280, H = 720;
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
@@ -471,9 +472,12 @@ const NOISE = [];
 // ---------- NVG road world ----------
 const CX = 640, CY = 338, R = 300, HY = 300;
 const F = R / Math.tan(20 * Math.PI / 180);  // 40 deg FOV across the tube
-const CAMH = 2.6;                            // PLS cab eye height (m)
-const curve = z => 14 * Math.sin(z / 110) + 6 * Math.sin(z / 41 + 1.3);
-const dcurve = z => 14 / 110 * Math.cos(z / 110) + 6 / 41 * Math.cos(z / 41 + 1.3);
+let CAMH = 2.6;                              // eye height (m): PLS cab 2.6, standing guide ~1.7
+let CURV = 1;   // 0 = straight lane (motor pool / yard)
+const curve = z => CURV * (14 * Math.sin(z / 110) + 6 * Math.sin(z / 41 + 1.3));
+const dcurve = z => CURV * (14 / 110 * Math.cos(z / 110) + 6 / 41 * Math.cos(z / 41 + 1.3));
+// project a point in camera space (x right, z ahead, y up), ignoring the road curve
+function projL(x, z, y, yaw = 0) { return { x: CX + (x / z - yaw) * F, y: HY + (CAMH - y) / z * F, s: F / z }; }
 
 const PROPS = [];
 (function () { const r = rng(42); let z = 5; while (z < 6000) { z += 8 + r() * 22; const side = r() < 0.5 ? -1 : 1; const k = r(); PROPS.push({ z, x: side * (7 + r() * 26), type: k < 0.62 ? 'tree' : k < 0.85 ? 'bush' : 'stake', h: 5 + r() * 7, w: 0.6 + r() * 0.8, seed: r() }); } })();
@@ -487,6 +491,7 @@ function proj(camZ, laneX, yaw, xOff, z, y) {
 
 // opts: camZ, yaw, laneX, illum, extras(fn), dash
 function drawRoadWorld(o) {
+  CURV = o.straight ? 0 : 1; CAMH = o.camH ?? 2.6;
   const g = wx, camZ = o.camZ, yaw = o.yaw || 0, laneX = o.laneX ?? 1.6, il = o.illum ?? 1;
   // sky
   const sky = g.createLinearGradient(0, 0, 0, HY);
@@ -512,7 +517,7 @@ function drawRoadWorld(o) {
   }
   // props far -> near
   const vis = [];
-  for (const p of PROPS) { const z = p.z - camZ; if (z > 2.5 && z < 420) vis.push([z, p]); }
+  if (o.props !== false) for (const p of PROPS) { const z = p.z - camZ; if (z > 2.5 && z < 420 && Math.abs(p.x) > (o.clearX || 0)) vis.push([z, p]); }
   if (o.objects) for (const ob of o.objects) { const z = ob.z - camZ; if (z > 1.5 && z < 600) vis.push([z, ob]); }
   vis.sort((a, b) => b[0] - a[0]);
   for (const [z, p] of vis) {
@@ -541,10 +546,19 @@ function drawRoadWorld(o) {
       const w = 2.4 * s, h = 2.6 * s;
       g.fillStyle = gray(0.2 * il + 0.05); g.fillRect(b.x - w / 2, b.y - h, w, h * 0.9);
       p._screen = [proj(camZ, laneX, yaw, p.x - 0.8, z, 1.0), proj(camZ, laneX, yaw, p.x + 0.8, z, 1.0)];
+    } else if (p.type === 'guide') {
+      drawGuide(g, b.x, b.y, s, p, il);
+    } else if (p.type === 'barrier') {
+      g.fillStyle = gray(0.42 * il + 0.08); g.beginPath(); g.moveTo(b.x - 1.0 * s, b.y); g.lineTo(b.x - 0.35 * s, b.y - 0.8 * s); g.lineTo(b.x + 0.35 * s, b.y - 0.8 * s); g.lineTo(b.x + 1.0 * s, b.y); g.fill();
+    } else if (p.type === 'cone') {
+      g.fillStyle = gray(0.55 * il + 0.1); g.beginPath(); g.moveTo(b.x - 0.18 * s, b.y); g.lineTo(b.x, b.y - 0.7 * s); g.lineTo(b.x + 0.18 * s, b.y); g.fill();
+      g.fillStyle = gray(0.9); g.fillRect(b.x - 0.08 * s, b.y - 0.42 * s, 0.16 * s, Math.max(1, 0.08 * s));
     } else if (p.type === 'ditch') {
       const w = 6 * s, d = 1.4 * s; g.fillStyle = gray(0.05); g.beginPath(); g.ellipse(b.x, b.y, w / 2, Math.max(2, d * 0.25), 0, 0, 7); g.fill();
     }
   }
+  if (o.flank) drawFlank(g, il);
+  if (o.cab === false) { if (o.extras) o.extras(g); return; }
   // cab: dash + pillars (fixed to vehicle, so shifted by head yaw)
   const sh = -yaw * F;
   g.fillStyle = gray(0.06);
@@ -558,32 +572,100 @@ function drawRoadWorld(o) {
   if (o.extras) o.extras(g);
 }
 
+// Ground guide figure. p.pose = {l, r}: arm angles in radians from straight down (positive = raised outward).
+// p.lights: 'ir' | 'filtered' | 'white' | null. Hand positions are stored in p._hands (world-canvas coords).
+function drawGuide(g, x, y, s, p, il) {
+  const h = 1.8 * s, pose = p.pose || { l: 0.3, r: 0.3 };
+  const shY = y - h * 0.80, shW = h * 0.12, arm = h * 0.40;
+  const body = gray(0.58 * il + 0.16);
+  g.fillStyle = body; g.strokeStyle = body;
+  g.beginPath(); g.arc(x, y - h * 0.92, h * 0.075, 0, 7); g.fill();
+  g.fillRect(x - shW, shY, shW * 2, h * 0.40);
+  g.fillRect(x - h * 0.10, y - h * 0.42, h * 0.08, h * 0.42); g.fillRect(x + h * 0.02, y - h * 0.42, h * 0.08, h * 0.42);
+  if (p.vest) { g.fillStyle = gray(0.85); g.fillRect(x - shW, shY + h * 0.12, shW * 2, h * 0.05); g.fillRect(x - shW, shY + h * 0.26, shW * 2, h * 0.05); }
+  g.lineWidth = Math.max(2, h * 0.07); g.lineCap = 'round';
+  p._hands = [];
+  for (const [side, a] of [[-1, pose.l], [1, pose.r]]) {
+    const sx = x + side * shW, hx = sx + side * Math.sin(a) * arm, hy = shY + Math.cos(a) * arm;
+    g.beginPath(); g.moveTo(sx, shY + h * 0.03); g.lineTo(hx, hy); g.stroke();
+    const wl = h * 0.22, wa = a + (pose.wand || 0);
+    const tx = hx + side * Math.sin(wa) * wl, ty = hy + Math.cos(wa) * wl;
+    g.lineWidth = Math.max(2, h * 0.035); g.strokeStyle = gray(0.25); g.beginPath(); g.moveTo(hx, hy); g.lineTo(tx, ty); g.stroke();
+    g.lineWidth = Math.max(2, h * 0.07); g.strokeStyle = body;
+    p._hands.push({ x: hx, y: hy, tx, ty, s });
+  }
+  if (p.aimAt) p._aim = { x: (p._hands[1].x), y: p._hands[1].y, s };
+}
+// side of the PLS seen from the left mirror (truck runs from the camera toward +z, flank at x = +0.7 m)
+function drawFlank(g, il) {
+  const pts = [[0.7, 1.6, 0.9], [0.7, 11.2, 0.9], [0.7, 11.2, 2.9], [0.7, 1.6, 2.9]].map(([x, z, y]) => projL(x, z, y));
+  g.fillStyle = gray(0.13 * il + 0.03); g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y)); g.closePath(); g.fill();
+  g.strokeStyle = gray(0.05); g.lineWidth = 2;
+  for (let z = 2.5; z < 11.2; z += 1.4) { const a = projL(0.7, z, 0.9), b = projL(0.7, z, 2.9); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); }
+  g.fillStyle = gray(0.03);
+  for (const z of [7.4, 8.8, 10.2]) { const c = projL(0.85, z, 0.55); g.beginPath(); g.ellipse(c.x, c.y, 0.25 * c.s, 0.55 * c.s, 0, 0, 7); g.fill(); }
+  // mirror housing edge
+  g.fillStyle = gray(0.02); g.fillRect(W - 60, 0, 60, H); g.fillRect(0, H - 40, W, 40);
+}
+// glow helper (use in post callbacks)
+function glow(c, x, y, r, rgb, a = 1) {
+  const g = c.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(0.18, `rgba(${rgb},${0.7 * a})`); g.addColorStop(1, `rgba(${rgb},0)`);
+  c.globalCompositeOperation = 'lighter'; c.fillStyle = g; c.fillRect(x - r, y - r, 2 * r, 2 * r); c.globalCompositeOperation = 'source-over';
+}
+// draw the wands of every guide object as light sources
+function wandLights(c, objs, rgb, a = 1, scale = 1) {
+  for (const p of objs) if (p._hands && p.lights) for (const hnd of p._hands) {
+    c.strokeStyle = `rgba(${rgb},${a})`; c.lineWidth = Math.max(3, hnd.s * 0.09); c.lineCap = 'round';
+    c.beginPath(); c.moveTo(hnd.x, hnd.y); c.lineTo(hnd.tx, hnd.ty); c.stroke();
+    glow(c, (hnd.x + hnd.tx) / 2, (hnd.y + hnd.ty) / 2, Math.max(14, hnd.s * 0.9) * scale, rgb, a * 0.9);
+  }
+}
+
+// Naked-eye night view of the world canvas, into a rectangle (default: full frame).
+function composeUnaided(o = {}) {
+  const r = o.rect || [0, 0, W, H], k = r[2] / W, ox = r[0], oy = r[1] + (r[3] - H * k) / 2;
+  if (!o.rect) { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
+  ctx.save(); ctx.beginPath(); roundRect(r[0], r[1], r[2], r[3], o.radius ?? 0); ctx.clip();
+  ctx.fillStyle = '#000'; ctx.fillRect(r[0], r[1], r[2], r[3]);
+  ctx.filter = `grayscale(1) brightness(${(o.gain ?? 0.32).toFixed(3)}) blur(${o.blur ?? 0.6}px)`;
+  ctx.drawImage(world, ox, oy, W * k, H * k); ctx.filter = 'none';
+  ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = '#93a6cf'; ctx.fillRect(r[0], r[1], r[2], r[3]); ctx.globalCompositeOperation = 'source-over';
+  if (o.post) { ctx.save(); ctx.translate(ox, oy); ctx.scale(k, k); o.post(ctx); ctx.restore(); }
+  if (o.wash) { ctx.fillStyle = `rgba(255,255,240,${o.wash})`; ctx.fillRect(r[0], r[1], r[2], r[3]); }
+  ctx.restore();
+}
+
 // compose NVG image from the world canvas onto main ctx
 function composeNVG(o = {}) {
+  const full = o.cx === undefined, cx = o.cx ?? CX, cy = o.cy ?? CY, rr = o.r ?? R, k = rr / R, ox = cx - CX * k, oy = cy - CY * k;
   const blur = o.blur || 0, nblur = o.noiseBlur || 0, gain = o.gain ?? 1, wash = o.wash || 0, nz = o.noise ?? 0.16;
-  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
-  // unaided eye: very dim night view
-  ctx.globalAlpha = 0.07 * (1 - (o.unaidedLoss || 0)); ctx.drawImage(world, 0, 0); ctx.globalAlpha = 1;
-  ctx.save(); ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI * 2); ctx.clip();
+  if (full) {
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    // unaided eye: very dim night view
+    ctx.globalAlpha = 0.07 * (1 - (o.unaidedLoss || 0)); ctx.drawImage(world, 0, 0); ctx.globalAlpha = 1;
+  }
+  ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2); ctx.clip();
+  ctx.fillStyle = '#000'; ctx.fillRect(cx - rr, cy - rr, 2 * rr, 2 * rr);
   const filt = [];
   if (blur > 0.05) filt.push(`blur(${blur.toFixed(2)}px)`);
   if (Math.abs(gain - 1) > 0.01) filt.push(`brightness(${gain.toFixed(3)})`);
   if (o.contrast) filt.push(`contrast(${o.contrast})`);
   ctx.filter = filt.length ? filt.join(' ') : 'none';
-  ctx.drawImage(world, 0, 0); ctx.filter = 'none';
-  if (o.post) o.post(ctx);  // bright sources etc. (grayscale space)
+  ctx.drawImage(world, ox, oy, W * k, H * k); ctx.filter = 'none';
+  if (o.post) { ctx.save(); ctx.translate(ox, oy); ctx.scale(k, k); o.post(ctx); ctx.restore(); }  // bright sources etc. (grayscale space)
   ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = '#7dff8f'; ctx.fillRect(0, 0, W, H);
   ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = 'rgba(14,46,20,1)'; ctx.fillRect(0, 0, W, H);
   ctx.globalAlpha = nz; if (nblur > 0.05) ctx.filter = `blur(${nblur.toFixed(2)}px)`;
-  ctx.drawImage(NOISE[FRAME % NOISE.length], CX - R, CY - R, R * 2, R * 2); ctx.filter = 'none';
+  ctx.drawImage(NOISE[FRAME % NOISE.length], cx - rr, cy - rr, rr * 2, rr * 2); ctx.filter = 'none';
   ctx.globalAlpha = 1;
   if (wash > 0) { ctx.fillStyle = `rgba(200,255,205,${wash})`; ctx.fillRect(0, 0, W, H); }
   ctx.globalCompositeOperation = 'source-over';
-  const vg = ctx.createRadialGradient(CX, CY, R * 0.55, CX, CY, R);
+  const vg = ctx.createRadialGradient(cx, cy, rr * 0.55, cx, cy, rr);
   vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.75)');
-  ctx.fillStyle = vg; ctx.fillRect(CX - R, CY - R, 2 * R, 2 * R);
+  ctx.fillStyle = vg; ctx.fillRect(cx - rr, cy - rr, 2 * rr, 2 * rr);
   ctx.restore();
-  ctx.strokeStyle = '#000'; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(CX, CY, R + 2, 0, 7); ctx.stroke();
+  ctx.strokeStyle = '#000'; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(cx, cy, rr + 2, 0, 7); ctx.stroke();
 }
 
 // ---------- shared drawing ----------
@@ -643,6 +725,71 @@ function plsSide(x, y, s, col) {
   ctx.restore();
 }
 
+// ---------- overlays ----------
+function overlays(sc, lt) {
+  if (sc.type !== 'title' && sc.type !== 'end') {
+    const a = smooth(0, 0.5, lt);
+    ctx.globalAlpha = a;
+    const kind = sc.kind, col = kind === 'do' ? GREEN : kind === 'dont' ? RED : '#7dff8f';
+    let x = 28;
+    if (kind !== 'info') {
+      const lab = kind === 'do' ? 'DO' : "DON'T"; ctx.font = `900 24px ${FONT}`; const w = ctx.measureText(lab).width + 60;
+      ctx.fillStyle = col; roundRect(x, 22, w, 44, 8); ctx.fill();
+      ctx.fillStyle = '#04100a'; ctx.textAlign = 'left'; ctx.fillText(lab, x + 46, 53);
+      if (kind === 'do') check(x + 24, 44, 26, '#04100a'); else cross(x + 24, 44, 24, '#04100a');
+      x += w + 14;
+    }
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.font = `800 26px ${FONT}`; const tw = ctx.measureText(sc.title).width + 28;
+    roundRect(x, 22, tw, 44, 8); ctx.fill(); text(sc.title, x + 14, 53, 26, '#eaffef', 800);
+    if (sc.section) { ctx.font = `800 15px ${FONT}`; const sw = ctx.measureText(sc.section).width + 24; ctx.fillStyle = 'rgba(0,0,0,0.6)'; roundRect(28, 74, sw, 28, 6); ctx.fill(); ctx.strokeStyle = sc.section.includes('WITH NVD') ? 'rgba(93,255,122,0.7)' : 'rgba(147,166,207,0.8)'; ctx.lineWidth = 1.5; ctx.stroke(); text(sc.section, 28 + sw / 2, 93, 15, sc.section.includes('WITH NVD') ? '#9dffb0' : '#c3cfe8', 800, 'center'); }
+    if (sc.ref) { ctx.font = `600 15px ${FONT}`; const rw = ctx.measureText(sc.ref).width + 24; ctx.fillStyle = 'rgba(0,0,0,0.6)'; roundRect(W - 28 - rw, 28, rw, 32, 6); ctx.fill(); text(sc.ref, W - 28 - rw / 2, 50, 15, '#9dbba2', 600, 'center'); }
+    ctx.globalAlpha = 1;
+  }
+  // caption
+  let cur = null;
+  for (const s of sc.sentences) if (lt >= s.start - 0.15 && lt <= s.start + s.dur + 0.35) cur = s;
+  if (cur) {
+    const lines = wrap(cur.text, 1040, 25, 500), lh = 33, bh = lines.length * lh + 22, by = H - 22 - bh;
+    ctx.fillStyle = 'rgba(0,0,0,0.72)'; roundRect(100, by, 1080, bh, 10); ctx.fill();
+    lines.forEach((l, i) => text(l, 640, by + 36 + i * lh, 25, '#f2fff3', 500, 'center'));
+  }
+  // progress
+  const T = TL.total, now = sc.start + lt;
+  ctx.fillStyle = 'rgba(93,255,122,0.15)'; ctx.fillRect(0, H - 4, W, 4); ctx.fillStyle = 'rgba(93,255,122,0.7)'; ctx.fillRect(0, H - 4, W * now / T, 4);
+}
+
+function renderAt(T) {
+  T = clamp(T, 0, TL.total - 1e-3);
+  let sc = TL.scenes[TL.scenes.length - 1];
+  for (const s of TL.scenes) if (T >= s.start && T < s.start + s.dur) { sc = s; break; }
+  SC = sc; LT = T - sc.start;
+  ctx.save(); SCENES[sc.type](LT, sc.dur); ctx.restore();
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.filter = 'none';
+  // scene transitions: quick fade through black
+  const fin = 1 - smooth(0, 0.45, LT), fout = smooth(sc.dur - 0.35, sc.dur, LT);
+  const f = Math.max(sc === TL.scenes[0] ? 0 : fin, sc === TL.scenes[TL.scenes.length - 1] ? 0 : fout);
+  if (f > 0) { ctx.fillStyle = `rgba(0,0,0,${f})`; ctx.fillRect(0, 0, W, H); }
+  overlays(sc, LT);
+}
+window.renderFrame = function (T, frame) { FRAME = frame ?? Math.floor(T * 30); renderAt(T); };
+
+// ---------- player ----------
+// Call after the page has defined SCENES.
+function startPlayer() {
+  if (location.search.includes('render')) { document.body.classList.add('render'); return; }
+{
+  const aud = document.getElementById('aud'), btn = document.getElementById('play'), seek = document.getElementById('seek'), tc = document.getElementById('tc');
+  seek.max = TL.total; let playing = false, t0 = 0, base = 0;
+  const now = () => playing ? base + (performance.now() - t0) / 1000 : base;
+  const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  btn.onclick = () => { if (playing) { base = now(); playing = false; aud.pause(); btn.textContent = 'Play'; } else { if (base >= TL.total - 0.1) base = 0; playing = true; t0 = performance.now(); aud.currentTime = base; aud.play().catch(() => {}); btn.textContent = 'Pause'; } };
+  seek.oninput = () => { base = +seek.value; t0 = performance.now(); aud.currentTime = base; };
+  (function loop() { const T = now(); if (T >= TL.total) { playing = false; base = TL.total; btn.textContent = 'Play'; } FRAME++; renderAt(T); seek.value = T; tc.textContent = fmt(T) + ' / ' + fmt(TL.total); requestAnimationFrame(loop); })();
+}
+}
+</script>
+<script>
+"use strict";
 // ---------- scenes ----------
 const SCENES = {
   title(t, d) {
@@ -950,62 +1097,6 @@ const SCENES = {
   },
 };
 
-// ---------- overlays ----------
-function overlays(sc, lt) {
-  if (sc.type !== 'title' && sc.type !== 'end') {
-    const a = smooth(0, 0.5, lt);
-    ctx.globalAlpha = a;
-    const kind = sc.kind, col = kind === 'do' ? GREEN : kind === 'dont' ? RED : '#7dff8f';
-    let x = 28;
-    if (kind !== 'info') {
-      const lab = kind === 'do' ? 'DO' : "DON'T"; ctx.font = `900 24px ${FONT}`; const w = ctx.measureText(lab).width + 60;
-      ctx.fillStyle = col; roundRect(x, 22, w, 44, 8); ctx.fill();
-      ctx.fillStyle = '#04100a'; ctx.textAlign = 'left'; ctx.fillText(lab, x + 46, 53);
-      if (kind === 'do') check(x + 24, 44, 26, '#04100a'); else cross(x + 24, 44, 24, '#04100a');
-      x += w + 14;
-    }
-    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.font = `800 26px ${FONT}`; const tw = ctx.measureText(sc.title).width + 28;
-    roundRect(x, 22, tw, 44, 8); ctx.fill(); text(sc.title, x + 14, 53, 26, '#eaffef', 800);
-    if (sc.ref) { ctx.font = `600 15px ${FONT}`; const rw = ctx.measureText(sc.ref).width + 24; ctx.fillStyle = 'rgba(0,0,0,0.6)'; roundRect(W - 28 - rw, 28, rw, 32, 6); ctx.fill(); text(sc.ref, W - 28 - rw / 2, 50, 15, '#9dbba2', 600, 'center'); }
-    ctx.globalAlpha = 1;
-  }
-  // caption
-  let cur = null;
-  for (const s of sc.sentences) if (lt >= s.start - 0.15 && lt <= s.start + s.dur + 0.35) cur = s;
-  if (cur) {
-    const lines = wrap(cur.text, 1040, 25, 500), lh = 33, bh = lines.length * lh + 22, by = H - 22 - bh;
-    ctx.fillStyle = 'rgba(0,0,0,0.72)'; roundRect(100, by, 1080, bh, 10); ctx.fill();
-    lines.forEach((l, i) => text(l, 640, by + 36 + i * lh, 25, '#f2fff3', 500, 'center'));
-  }
-  // progress
-  const T = TL.total, now = sc.start + lt;
-  ctx.fillStyle = 'rgba(93,255,122,0.15)'; ctx.fillRect(0, H - 4, W, 4); ctx.fillStyle = 'rgba(93,255,122,0.7)'; ctx.fillRect(0, H - 4, W * now / T, 4);
-}
 
-function renderAt(T) {
-  T = clamp(T, 0, TL.total - 1e-3);
-  let sc = TL.scenes[TL.scenes.length - 1];
-  for (const s of TL.scenes) if (T >= s.start && T < s.start + s.dur) { sc = s; break; }
-  SC = sc; LT = T - sc.start;
-  ctx.save(); SCENES[sc.type](LT, sc.dur); ctx.restore();
-  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.filter = 'none';
-  // scene transitions: quick fade through black
-  const fin = 1 - smooth(0, 0.45, LT), fout = smooth(sc.dur - 0.35, sc.dur, LT);
-  const f = Math.max(sc === TL.scenes[0] ? 0 : fin, sc === TL.scenes[TL.scenes.length - 1] ? 0 : fout);
-  if (f > 0) { ctx.fillStyle = `rgba(0,0,0,${f})`; ctx.fillRect(0, 0, W, H); }
-  overlays(sc, LT);
-}
-window.renderFrame = function (T, frame) { FRAME = frame ?? Math.floor(T * 30); renderAt(T); };
-
-// ---------- player ----------
-if (location.search.includes('render')) document.body.classList.add('render');
-else {
-  const aud = document.getElementById('aud'), btn = document.getElementById('play'), seek = document.getElementById('seek'), tc = document.getElementById('tc');
-  seek.max = TL.total; let playing = false, t0 = 0, base = 0;
-  const now = () => playing ? base + (performance.now() - t0) / 1000 : base;
-  const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-  btn.onclick = () => { if (playing) { base = now(); playing = false; aud.pause(); btn.textContent = 'Play'; } else { if (base >= TL.total - 0.1) base = 0; playing = true; t0 = performance.now(); aud.currentTime = base; aud.play().catch(() => {}); btn.textContent = 'Pause'; } };
-  seek.oninput = () => { base = +seek.value; t0 = performance.now(); aud.currentTime = base; };
-  (function loop() { const T = now(); if (T >= TL.total) { playing = false; base = TL.total; btn.textContent = 'Play'; } FRAME++; renderAt(T); seek.value = T; tc.textContent = fmt(T) + ' / ' + fmt(TL.total); requestAnimationFrame(loop); })();
-}
+startPlayer();
 </script>

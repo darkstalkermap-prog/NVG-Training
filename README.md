@@ -1,4 +1,12 @@
 # NVG-Training
+Two narrated 5-minute training simulations for driving the **M1075A1 PLS** at night with the **AN/PVS-14**.
+
+| Video | Download | Interactive player |
+|-------|----------|--------------------|
+| NVG Driving: Do's & Don'ts (AR 600-55) | [MP4](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/NVG_PVS-14_PLS_Dos_and_Donts.mp4) | [`docs/index.html`](docs/index.html) |
+| Ground Guiding at Night, with & without NVDs (AR 385-10, TC 21-60) | [MP4](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/NVG_Ground_Guiding_at_Night.mp4) | [`docs/ground-guide.html`](docs/ground-guide.html) |
+
+## Video 1: NVG Driving Do's & Don'ts
 An NVG simulation of Do's and Don'ts: **AN/PVS-14** monocular night vision device while driving the **M1075A1 PLS**, framed by **AR 600-55** (Army Driver and Operator Standardization Program).
 
 **Video:** [`NVG_PVS-14_PLS_Dos_and_Donts.mp4`](NVG_PVS-14_PLS_Dos_and_Donts.mp4) — 5:00, 1280x720, 30 fps, narrated with captions.
@@ -25,8 +33,30 @@ An NVG simulation of Do's and Don'ts: **AN/PVS-14** monocular night vision devic
 
 > Training aid only. Speeds and distances in the overdrive scene are illustrative. Verify all content against the current AR 600-55, TC 21-305-2, the vehicle and device TMs, and your unit SOP before using it for instruction.
 
+## Video 2: Ground Guiding at Night
+| Time | Segment |
+|------|---------|
+| 0:00 | Title |
+| 0:20 | When a ground guide is required (AR 385-10, two guides for the PLS per SOP) |
+| 0:47 | DO brief before you move, walk the route |
+| 1:11 | DO stay where the driver can see you |
+| 1:34 | *Without NVDs:* DO use filtered lights |
+| 1:56 | *Without NVDs:* DON'T blind the driver with white light |
+| 2:17 | *Without NVDs:* DON'T disappear into the blind spot / hook arm path |
+| 2:37 | *With NVDs:* DO use IR chemlights or wands (naked eye vs PVS-14) |
+| 3:01 | *With NVDs:* DO signal big and slow (TC 21-60) |
+| 3:18 | *With NVDs:* DON'T aim IR light at the driver |
+| 3:40 | *With NVDs:* DO keep extra distance when the guide is on NVDs |
+| 4:01 | DO stop when sight of the guide is lost |
+| 4:19 | Recap |
+| 4:45 | References / close |
+
+> The hand-and-arm signals shown are illustrative. Use the signals in TC 21-60 and your unit SOP.
+
 ## How it's built
-- `sim/scenes.json` — the script: scene order, DO/DON'T type, on-screen title, references, narration text. Edit this to change wording.
+- `sim/engine.js` — shared renderer (NVG tube, naked-eye view, world, PLS drawings, captions, player).
+- `sim/ground-guide/` — video 2 (its own `scenes.json`, `index.html`, `timeline.js`, `narration.m4a`).
+- `sim/scenes.json` — video 1 script: scene order, DO/DON'T type, on-screen title, references, narration text. Edit this to change wording.
 - `sim/build_audio.py` — neural text-to-speech (Kokoro, voice `am_michael`; falls back to espeak-ng if the model isn't present), fits the total to 300 s, writes `build/narration.wav` and `sim/timeline.js` (sentence timings for captions).
 - `sim/index.html` — the canvas simulation (NVG tube view with noise/blur/blooming, top-down PLS scenes). Open it in a browser to scrub through interactively.
 - `sim/build_artifact.py` — bundles the player, timeline and narration into `docs/index.html`.
@@ -41,7 +71,10 @@ mkdir -p models && cd models
 curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
 curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
 cd ..
-python3 sim/build_audio.py
-python3 sim/build_artifact.py && cp build/NVG-Sim.html docs/index.html
+python3 sim/build_audio.py                       # video 1
+python3 sim/build_audio.py sim/ground-guide      # video 2
+python3 sim/build_artifact.py                                         # -> docs/index.html
+python3 sim/build_artifact.py sim/ground-guide docs/ground-guide.html
+node sim/render.js --dir sim/ground-guide --out NVG_Ground_Guiding_at_Night.mp4
 node sim/render.js            # --fps 30 --workers 4 ; --stills 10,60 for preview JPGs in build/
 ```
