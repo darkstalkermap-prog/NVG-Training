@@ -25,7 +25,13 @@ if os.path.exists(os.path.join(KOKORO_DIR, "kokoro-v1.0.onnx")):
     _kokoro = Kokoro(os.path.join(KOKORO_DIR, "kokoro-v1.0.onnx"), os.path.join(KOKORO_DIR, "voices-v1.0.bin"))
 SR = 24000 if _kokoro else 16000
 
-LEAD, GAP, TAIL = 0.6, 0.38, 1.0
+LEAD, GAP, TAIL = 0.5, 0.3, 0.9
+SPEED = int(os.environ.get("NVG_SPEED", "115"))  # percent of normal speaking rate
+
+# Word-level pronunciation fixes applied to Kokoro's phonemes (word -> IPA as the voice produces it).
+PHONEME_FIX = {
+    "mɑːnˈoʊkjʊlɚ": "mənˈɑːkjəlɚ",  # monocular: muh-NOCK-yuh-ler
+}
 
 # Caption text -> spoken text. Letters are hyphenated where Kokoro would
 # otherwise read a lone "A" as the article "uh" (check with Kokoro.tokenizer.phonemize).
@@ -61,7 +67,10 @@ def tts(text, speed, path):
     if key in _cache:
         return _cache[key]
     if _kokoro:
-        a, sr = _kokoro.create(text, voice=KOKORO_VOICE, speed=speed / 100, lang="en-us")
+        ph = _kokoro.tokenizer.phonemize(text, "en-us")
+        for a_, b_ in PHONEME_FIX.items():
+            ph = ph.replace(a_, b_)
+        a, sr = _kokoro.create(ph, voice=KOKORO_VOICE, speed=speed / 100, is_phonemes=True)
         assert sr == SR, sr
         data = (np.clip(a, -1, 1) * 32767).astype(np.int16)
     else:
@@ -95,22 +104,19 @@ def main():
     os.makedirs(BUILD, exist_ok=True)
     tmp = tempfile.mkdtemp(dir=BUILD)
     print("voice:", f"kokoro/{KOKORO_VOICE}" if _kokoro else f"espeak/{ESPEAK_VOICE}")
-    speed = 100
-    for _ in range(8):
-        scenes = build(speed, tmp, cfg)
-        total = sum(s["base"] for s in scenes)
-        print(f"speed {speed}: {total:.1f}s")
-        if total <= target and target - total < 25:
-            break
-        speed = int(speed * total / (target - 8))
-        speed = max(80, min(125, speed))
+    # Speak at a natural fixed pace; the video runs at least target_seconds and
+    # grows if the narration needs more time.
+    scenes = build(SPEED, tmp, cfg)
+    total = sum(s["base"] for s in scenes)
+    print(f"speed {SPEED}%: narration needs {total:.1f}s")
+    target = max(target, round(total + 0.5))
     slack = (target - total) / len(scenes)
     t = 0.0
     timeline = {"total": target, "scenes": []}
     track = np.zeros(int(target * SR) + SR, dtype=np.float32)
     for sc in scenes:
         dur = sc["base"] + slack
-        extra = slack / 2  # spread slack: half before speech, half after
+        extra = slack * 0.3  # spare time: a little before speech, the rest lets visuals play out after
         cur = LEAD + extra
         sents = []
         for s in sc["sents"]:
