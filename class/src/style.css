@@ -1,0 +1,30 @@
+@page { size: Letter; margin: 0.6in 0.65in; }
+:root { --ink:#1b211d; --muted:#5a645c; --rule:#c9d1ca; --band:#eef2ee; --accent:#2f6b3c; --red:#a3271f; }
+* { box-sizing: border-box; }
+body { font-family: Inter, "DejaVu Sans", sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.42; margin: 0; }
+h1 { font-size: 20pt; margin: 0 0 2pt; letter-spacing: -0.01em; }
+h2 { font-size: 13pt; margin: 16pt 0 6pt; padding-bottom: 3pt; border-bottom: 1.5pt solid var(--ink); break-after: avoid; }
+h3 { font-size: 11pt; margin: 10pt 0 4pt; break-after: avoid; }
+.sub { color: var(--muted); font-size: 10pt; margin-bottom: 10pt; }
+.hdr { display:flex; justify-content:space-between; align-items:flex-end; border-bottom: 3pt solid var(--accent); padding-bottom: 6pt; margin-bottom: 10pt; }
+.hdr .tag { font-size: 8.5pt; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 4pt 0 8pt; font-size: 9.8pt; }
+th, td { border: 0.75pt solid var(--rule); padding: 4pt 6pt; text-align: left; vertical-align: top; }
+th { background: var(--band); font-weight: 700; }
+td.n, th.n { width: 1%; white-space: nowrap; font-variant-numeric: tabular-nums; }
+ul, ol { margin: 3pt 0 6pt; padding-left: 16pt; } li { margin: 1.5pt 0; }
+.note { border-left: 3pt solid var(--accent); background: var(--band); padding: 6pt 9pt; margin: 8pt 0; font-size: 9.6pt; }
+.warn { border-left-color: var(--red); }
+.page { break-before: page; }
+.fill { display:inline-block; border-bottom: 0.75pt solid var(--ink); min-width: 1.6in; }
+.q { break-inside: avoid; margin: 0 0 9pt; }
+.q .stem { font-weight: 600; }
+.q ol { list-style: upper-alpha; margin-top: 2pt; }
+.lines div { border-bottom: 0.75pt solid var(--rule); height: 18pt; }
+.card { border: 1.25pt solid var(--ink); padding: 8pt 11pt; margin: 0 0 12pt; break-inside: avoid; }
+.card h3 { margin-top: 0; font-size: 12pt; }
+.card .meta { color: var(--muted); font-size: 9pt; margin-bottom: 4pt; }
+.cols { display:grid; grid-template-columns: 1fr 1fr; gap: 0 16pt; }
+.key td:nth-child(2) { font-weight: 800; text-align:center; width: 0.5in; }
+.small { font-size: 8.8pt; color: var(--muted); }
+.box { display:inline-block; width:10pt; height:10pt; border:0.9pt solid var(--ink); vertical-align:-1pt; margin-right:4pt; }
