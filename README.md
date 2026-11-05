@@ -1,12 +1,12 @@
 # NVG-Training
-Four narrated 5-minute training videos, plus a printable class packet, for driving the **M1075A1 PLS** at night with the **AN/PVS-14**.
+Four narrated training videos (5 to 10 minutes), plus a printable class packet, for driving the **M1075A1 PLS** at night with the **AN/PVS-14**.
 
 | Video | Download | Interactive player |
 |-------|----------|--------------------|
 | NVG Driving: Do's & Don'ts (AR 600-55) | [MP4](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/NVG_PVS-14_PLS_Dos_and_Donts.mp4) | [`docs/index.html`](docs/index.html) |
 | Ground Guiding at Night, with & without NVDs (AR 385-10, TC 21-60) | [MP4](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/NVG_Ground_Guiding_at_Night.mp4) | [`docs/ground-guide.html`](docs/ground-guide.html) |
 | NVD Safety (limits, care, batteries, accountability, failure drill, IR discipline, risk) | [MP4](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/NVG_NVD_Safety.mp4) | [`docs/nvd-safety.html`](docs/nvd-safety.html) |
-| How-To: Mounting the PVS-14, mount checks, eye health, benefits | [MP4](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/NVG_Mounting_HowTo.mp4) | [`docs/nvg-howto.html`](docs/nvg-howto.html) |
+| How-To: Mounting the PVS-14, mount checks, eye health, benefits, Principles of Night Vision + 14-question knowledge check (TC 21-305-2 Quiz 721-500-01.5), about 10 min | [MP4](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/NVG_Mounting_HowTo.mp4) | [`docs/nvg-howto.html`](docs/nvg-howto.html) |
 
 ### Class packet (Day 1: classroom, written, familiarization)
 - [Instructor lesson plan, stations & GO/NO-GO roster (PDF)](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/class/1_Instructor_Lesson_Plan.pdf)

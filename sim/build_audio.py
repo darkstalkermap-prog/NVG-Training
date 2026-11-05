@@ -32,6 +32,7 @@ SPEED = int(os.environ.get("NVG_SPEED", "115"))  # percent of normal speaking ra
 # Word-level pronunciation fixes applied to Kokoro's phonemes (word -> IPA as the voice produces it).
 PHONEME_FIX = {
     "mɑːnˈoʊkjʊlɚ": "mənˈɑːkjəlɚ",  # monocular: muh-NOCK-yuh-ler
+    "foʊtˈoʊpɪk": "foʊtˈɑːpɪk",  # photopic: foh-TOP-ik
 }
 
 # Caption text -> spoken text. Letters are hyphenated where Kokoro would
@@ -98,7 +99,7 @@ def build(speed, tmp, cfg):
             p = os.path.join(tmp, f"{sc['id']}_{i}.wav")
             a = tts(to_speech(s), speed, p)
             sents.append({"text": s, "audio": a, "dur": len(a) / SR})
-        speech = sum(x["dur"] for x in sents) + GAP * (len(sents) - 1)
+        speech = sum(x["dur"] for x in sents) + GAP * (len(sents) - 1) + sum(sc.get("pause_after", {}).values())
         scenes.append({**sc, "sents": sents, "base": LEAD + speech + TAIL})
     return scenes
 
@@ -128,7 +129,7 @@ def main():
             i0 = int(start_abs * SR)
             track[i0:i0 + len(s["audio"])] += s["audio"].astype(np.float32) / 32768.0
             sents.append({"text": s["text"], "start": round(cur, 3), "dur": round(s["dur"], 3)})
-            cur += s["dur"] + GAP
+            cur += s["dur"] + GAP + sc.get("pause_after", {}).get(str(len(sents) - 1), 0)
         timeline["scenes"].append({k: v for k, v in sc.items() if k not in ("text", "sents", "base")} |
                                   {"start": round(t, 3), "dur": round(dur, 3), "sentences": sents})
         t += dur

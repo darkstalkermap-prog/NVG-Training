@@ -7,7 +7,7 @@
    "kind": "info",
    "title": "NVG How-To",
    "ref": "",
-   "text": "How to put on night vision goggles. This video shows how to mount the AN/PVS-14 on your helmet, how to check the mount, what night vision does to your eyes, and why it is worth doing right."
+   "text": "How to put on night vision goggles. This video shows how to mount the AN/PVS-14 on your helmet and check the mount, what night vision does to your eyes, the principles of night vision from TC 21-305-2, and ends with a knowledge check."
   },
   {
    "id": "benefits",
@@ -90,6 +90,14 @@
    "text": "Don't drive with a loose mount. A sagging device bounces the image, pulls your attention off the road, and strains your neck. A device that falls can hit your face or eye, and a lost sensitive item stops the mission."
   },
   {
+   "id": "stow",
+   "type": "stow",
+   "kind": "do",
+   "title": "Stow and Remove",
+   "ref": "Operator TM · Unit SOP",
+   "text": "To stow, flip the device up and turn it off. To remove it, unlock it from the mount, put the lens caps on, and take out the battery for storage. Account for the device, and turn it in according to your unit SOP. Never carry the helmet by the mount or the device."
+  },
+  {
    "id": "eyes",
    "type": "eyes",
    "kind": "info",
@@ -106,12 +114,395 @@
    "text": "Do protect your eyes. Take breaks, and follow the rest plan. Keep the eyecup clean, and clean it before sharing a device. Never look at a laser, with or without night vision. If you have eye pain, blurred vision, or headaches that do not go away, report it to medical."
   },
   {
-   "id": "stow",
-   "type": "stow",
-   "kind": "do",
-   "title": "Stow and Remove",
-   "ref": "Operator TM · Unit SOP",
-   "text": "To stow, flip the device up and turn it off. To remove it, unlock it from the mount, put the lens caps on, and take out the battery for storage. Account for the device, and turn it in according to your unit SOP. Never carry the helmet by the mount or the device."
+   "id": "p_vision",
+   "type": "p_vision",
+   "kind": "info",
+   "section": "PRINCIPLES OF NIGHT VISION",
+   "title": "Vision Is Your Key Sense",
+   "ref": "TC 21-305-2",
+   "text": "Now, the principles of night vision. Vision is the most important sense you use while driving. You need good depth perception for judging height and distance, good night vision techniques for efficiency in night operations, and good visual acuity for identifying terrain features and obstacles."
+  },
+  {
+   "id": "p_eye",
+   "type": "p_eye",
+   "kind": "info",
+   "section": "PRINCIPLES OF NIGHT VISION",
+   "title": "How the Eye Works",
+   "ref": "TC 21-305-2",
+   "text": "Here is how the eye works. The cornea is the clear, protective front of the eye. Light enters through the pupil, and the iris, the colored part of the eye, controls how much light gets in. The lens focuses the light on the retina, the lining at the back of the eye where the image is formed. That image is upside down, and the brain turns it right way up."
+  },
+  {
+   "id": "p_types",
+   "type": "p_types",
+   "kind": "info",
+   "section": "PRINCIPLES OF NIGHT VISION",
+   "title": "Acuity and Types of Vision",
+   "ref": "TC 21-305-2",
+   "text": "Visual acuity is the accuracy of how well you see, measured for each eye with a standard eye chart. Photopic vision works in daylight. Scotopic vision works in darkness. Mesopic vision is used at dawn, at dusk, and during other mid-light levels."
+  },
+  {
+   "id": "p_adapt",
+   "type": "p_adapt",
+   "kind": "info",
+   "section": "PRINCIPLES OF NIGHT VISION",
+   "title": "Dark Adaptation and Flash Protection",
+   "ref": "TC 21-305-2",
+   "text": "Maximum dark adaptation is reached in about thirty to forty-five minutes. If you expect a flash or high-intensity light from a known direction, turn the vehicle away from it. If you don't know the direction, close one eye. Once the light is no longer a problem, the eye you closed still has enough night vision to keep driving."
+  },
+  {
+   "id": "p_robbers",
+   "type": "p_robbers",
+   "kind": "info",
+   "section": "PRINCIPLES OF NIGHT VISION",
+   "title": "What Robs Night Vision",
+   "ref": "TC 21-305-2",
+   "text": "Night myopia blurs vision at night, but special lenses can be prescribed for it. Night driving is more tiring and stressful than day driving. Self-imposed stresses also hurt you. Smoking alone reduces night vision by about twenty percent."
+  },
+  {
+   "id": "p_scan",
+   "type": "p_scan",
+   "kind": "info",
+   "section": "PRINCIPLES OF NIGHT VISION",
+   "title": "Scanning and Depth Perception",
+   "ref": "TC 21-305-2",
+   "text": "To identify objects, scan from right to left, or left to right, using a slow, regular movement. Depth perception tells you exactly where things are in space. It is what gave our tree-dwelling ancestors their edge as they swung from branch to branch."
+  },
+  {
+   "id": "p_light",
+   "type": "p_light",
+   "kind": "info",
+   "section": "PRINCIPLES OF NIGHT VISION",
+   "title": "Light and Weather",
+   "ref": "TC 21-305-2",
+   "text": "The moon provides the greatest source of ambient light at night. Cloud cover over the moon and stars, along with dew, smoke, and haze, are weather conditions that reduce illumination. Check them before every night mission."
+  },
+  {
+   "id": "quizintro",
+   "type": "quizintro",
+   "kind": "info",
+   "section": "KNOWLEDGE CHECK",
+   "title": "Knowledge Check",
+   "ref": "TC 21-305-2 · Quiz 721-500-01.5",
+   "text": "Knowledge check. These fourteen questions come from TC 21-305-2, quiz seven twenty-one, five hundred, oh one point five, Principles of Night Vision. Answer each one before the answer appears, and pause the video if you need more time."
+  },
+  {
+   "id": "q1",
+   "type": "quiz",
+   "kind": "info",
+   "section": "KNOWLEDGE CHECK",
+   "title": "Question 1 of 14",
+   "ref": "TC 21-305-2",
+   "num": 1,
+   "q": "Vision is the most important sense you use while driving. You need good ____ for determining height and distance, good ____ for efficiency in night operations, and good ____ for identifying terrain features and obstacles.",
+   "choices": [
+    "a. Night vision techniques.",
+    "b. Visual acuity.",
+    "c. Depth perception.",
+    "d. Weather."
+   ],
+   "correct": [
+    "c",
+    "a",
+    "b"
+   ],
+   "pause_after": {
+    "0": 4.0
+   },
+   "text": "Question one: you need good what for height and distance, good what for efficiency at night, and good what for identifying terrain? Answer: depth perception, night vision techniques, and visual acuity."
+  },
+  {
+   "id": "q2",
+   "type": "quiz",
+   "kind": "info",
+   "section": "KNOWLEDGE CHECK",
+   "title": "Question 2 of 14",
+   "ref": "TC 21-305-2",
+   "num": 2,
+   "q": "Identify the portions of the eye that correspond to the following descriptions:\n____ Clear, protective part of the eye.\n____ The lining at the back of the eye where the image is formed.\n____ The colored portion of the eye.",
+   "choices": [
+    "a. Cornea.",
+    "b. Iris.",
+    "c. Lens.",
+    "d. Retina.",
+    "e. Optic nerve."
+   ],
+   "correct": [
+    "a",
+    "d",
+    "b"
+   ],
+   "pause_after": {
+    "0": 4.0
+   },
+   "text": "Question two: name the clear protective part of the eye, the lining where the image is formed, and the colored portion. Answer: cornea, retina, and iris."
+  },
+  {
+   "id": "q3",
+   "type": "quiz",
+   "kind": "info",
+   "section": "KNOWLEDGE CHECK",
+   "title": "Question 3 of 14",
+   "ref": "TC 21-305-2",
+   "num": 3,
+   "q": "Light enters your eye through the ____. The amount of light entering the eye is controlled by the ____. The light passes through the ____ which focuses it on the ____ at the back of the eye. The picture seen is upside down, which the ____ turns right way up.",
+   "choices": [
+    "a. Brain.",
+    "b. Iris.",
+    "c. Retina.",
+    "d. Optic nerve.",
+    "e. Pupil.",
+    "f. Lens."
+   ],
+   "correct": [
+    "e",
+    "b",
+    "f",
+    "c",
+    "a"
+   ],
+   "pause_after": {
+    "0": 4.0
+   },
+   "text": "Question three: fill in the path of light, from where it enters the eye, to what turns the picture right way up. Answer: pupil, iris, lens, retina, and brain."
+  },
+  {
+   "id": "q4",
+   "type": "quiz",
+   "kind": "info",
+   "section": "KNOWLEDGE CHECK",
+   "title": "Question 4 of 14",
+   "ref": "TC 21-305-2",
+   "num": 4,
+   "q": "The accuracy of how well you see is known as ____. It is determined for each eye by reading a standard eye chart.",
+   "choices": [
+    "a. Depth perception.",
+    "b. Visual acuity.",
+    "c. Dark adaptation."
+   ],
+   "correct": [
+    "b"
+   ],
+   "pause_after": {
+    "0": 4.0
+   },
+   "text": "Question four: the accuracy of how well you see is known as what? Answer: B, visual acuity."
+  },
+  {
+   "id": "q5",
+   "type": "quiz",
+   "kind": "info",
+   "section": "KNOWLEDGE CHECK",
+   "title": "Question 5 of 14",
+   "ref": "TC 21-305-2",
+   "num": 5,
+   "q": "What type of vision is used at dawn, at dusk, and during periods of mid-light levels?",
+   "choices": [
+    "a. Mesopic.",
+    "b. Photopic.",
+    "c. Scotopic."
+   ],
+   "correct": [
+    "a"
+   ],
+   "pause_after": {
+    "0": 4.0
+   },
+   "text": "Question five: what type of vision is used at dawn, at dusk, and at mid-light levels? Answer: A, mesopic."
+  },
+  {
+   "id": "q6",
+   "type": "quiz",
+   "kind": "info",
+   "section": "KNOWLEDGE CHECK",
+   "title": "Question 6 of 14",
+   "ref": "TC 21-305-2",
+   "num": 6,
+   "q": "Night myopia is a visual problem that affects night vision. A person with this condition will experience blurred vision at night. Special lenses cannot be prescribed for this condition.",
+   "choices": [
+    "a. True.",
+    "b. False."
+   ],
+   "correct": [
+    "b"
+   ],
+   "pause_after": {
+    "0": 4.0
+   },
+   "text": "Question six, true or false: special lenses cannot be prescribed for night myopia. Answer: false. Special lenses can be prescribed."
+  },
+  {
+   "id": "q7",
+   "type": "quiz",
+   "kind": "info",
+   "section": "KNOWLEDGE CHECK",
+   "title": "Question 7 of 14",
+   "ref": "TC 21-305-2",
+   "num": 7,
+   "q": "Maximum dark adaptation is reached in about ____.",
+   "choices": [
+    "a. 30 to 45 minutes.",
+    "b. 5 to 10 minutes.",
+    "c. 1 to 2 hours."
+   ],
+   "correct": [
+    "a"
+   ],
+   "pause_after": {
+    "0": 4.0
+   },
+   "text": "Question seven: maximum dark adaptation is reached in about how long? Answer: A, thirty to forty-five minutes."
+  },
+  {
+   "id": "q8",
+   "type": "quiz",
+   "kind": "info",
+   "section": "KNOWLEDGE CHECK",
+   "title": "Question 8 of 14",
+   "ref": "TC 21-305-2",
+   "num": 8,
+   "q": "If a flash or high intensity light is expected from a specific direction, turn the vehicle away from the light source. If the direction is not known, close one eye. Once the light source is no longer a problem, the eye that was closed will provide enough night vision to continue driving.",
+   "choices": [
+    "a. True.",
+    "b. False."
+   ],
+   "correct": [
+    "a"
+   ],
+   "pause_after": {
+    "0": 4.0
+   },
+   "text": "Question eight, true or false: closing one eye protects enough night vision to keep driving after a flash. Answer: true."
+  },
+  {
+   "id": "q9",
+   "type": "quiz",
+   "kind": "info",
+   "section": "KNOWLEDGE CHECK",
+   "title": "Question 9 of 14",
+   "ref": "TC 21-305-2",
+   "num": 9,
+   "q": "Night driving is more tiring and stressful than day driving.",
+   "choices": [
+    "a. True.",
+    "b. False."
+   ],
+   "correct": [
+    "a"
+   ],
+   "pause_after": {
+    "0": 4.0
+   },
+   "text": "Question nine, true or false: night driving is more tiring and stressful than day driving. Answer: true."
+  },
+  {
+   "id": "q10",
+   "type": "quiz",
+   "kind": "info",
+   "section": "KNOWLEDGE CHECK",
+   "title": "Question 10 of 14",
+   "ref": "TC 21-305-2",
+   "num": 10,
+   "q": "Of the following self-imposed stresses, ____ reduces 20 percent of a person's night vision.",
+   "choices": [
+    "a. Alcohol.",
+    "b. Smoking.",
+    "c. Fatigue."
+   ],
+   "correct": [
+    "b"
+   ],
+   "pause_after": {
+    "0": 4.0
+   },
+   "text": "Question ten: which self-imposed stress reduces night vision by twenty percent? Answer: B, smoking."
+  },
+  {
+   "id": "q11",
+   "type": "quiz",
+   "kind": "info",
+   "section": "KNOWLEDGE CHECK",
+   "title": "Question 11 of 14",
+   "ref": "TC 21-305-2",
+   "num": 11,
+   "q": "Night vision scanning techniques are important in object identification. Select the statement that best describes the proper scanning technique.",
+   "choices": [
+    "a. Scan from right to left, or left to right, using a slow, regular movement.",
+    "b. Scan from up to down, or down to up, using a regular movement.",
+    "c. Rapidly scan the horizon from right to left or left to right."
+   ],
+   "correct": [
+    "a"
+   ],
+   "pause_after": {
+    "0": 4.0
+   },
+   "text": "Question eleven: which statement best describes the proper scanning technique? Answer: A, right to left or left to right, using a slow, regular movement."
+  },
+  {
+   "id": "q12",
+   "type": "quiz",
+   "kind": "info",
+   "section": "KNOWLEDGE CHECK",
+   "title": "Question 12 of 14",
+   "ref": "TC 21-305-2",
+   "num": 12,
+   "q": "____ gave our tree-dwelling forefathers an edge when they swung from branch to branch. They knew exactly where in space that next branch was located.",
+   "choices": [
+    "a. Depth perception.",
+    "b. Spatial disorientation.",
+    "c. Visual acuity."
+   ],
+   "correct": [
+    "a"
+   ],
+   "pause_after": {
+    "0": 4.0
+   },
+   "text": "Question twelve: what gave our tree-dwelling forefathers their edge, swinging from branch to branch? Answer: A, depth perception."
+  },
+  {
+   "id": "q13",
+   "type": "quiz",
+   "kind": "info",
+   "section": "KNOWLEDGE CHECK",
+   "title": "Question 13 of 14",
+   "ref": "TC 21-305-2",
+   "num": 13,
+   "q": "The ____ provides the greatest source of ambient light at night.",
+   "choices": [
+    "a. Stars.",
+    "b. Moon.",
+    "c. Lights from cities."
+   ],
+   "correct": [
+    "b"
+   ],
+   "pause_after": {
+    "0": 4.0
+   },
+   "text": "Question thirteen: what provides the greatest source of ambient light at night? Answer: B, the moon."
+  },
+  {
+   "id": "q14",
+   "type": "quiz",
+   "kind": "info",
+   "section": "KNOWLEDGE CHECK",
+   "title": "Question 14 of 14",
+   "ref": "TC 21-305-2",
+   "num": 14,
+   "q": "Cloud coverage of the moon and stars, ____ are examples of weather considerations that reduce illumination.",
+   "choices": [
+    "a. Fog and lightning.",
+    "b. Dew, smoke, and haze.",
+    "c. Dust, smoke, haze, dew, and lightning."
+   ],
+   "correct": [
+    "b"
+   ],
+   "pause_after": {
+    "0": 4.0
+   },
+   "text": "Question fourteen: along with cloud cover, which weather conditions reduce illumination? Answer: B, dew, smoke, and haze."
   },
   {
    "id": "summary",
@@ -119,7 +510,7 @@
    "kind": "info",
    "title": "Recap",
    "ref": "",
-   "text": "To recap. Inspect the shroud and mount, lock in the mount and the device, and pull test both. Attach the lanyard, tighten the helmet, and add the counterweight. Adjust and focus, do the shake test, and never drive with a loose mount. Protect your eyes, and stow and account for the device."
+   "text": "To recap. Inspect the shroud and mount, lock in the mount and the device, and pull test both. Attach the lanyard, tighten the helmet, and add the counterweight. Adjust and focus, do the shake test, and never drive with a loose mount. Protect your eyes, know the principles of night vision, and stow and account for the device."
   },
   {
    "id": "end",
