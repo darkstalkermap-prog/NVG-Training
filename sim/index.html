@@ -144,7 +144,7 @@ const SCENES = {
     ctx.fillStyle = '#16231a'; ctx.fillRect(0, fy - 110, W, 220);
     plsTop(fx, fy, ppm, {});
     // occupants
-    const seats = [[-1.6, -0.6, 'DRIVER', 0], [-1.6, 0.6, 'A-DRIVER / TC', 1.3]];
+    const seats = [[-1.0, -0.6, 'DRIVER', 0], [-1.0, 0.6, 'A-DRIVER / TC', 1.3]];
     for (const [sx, sy, lbl, ph] of seats) {
       const px = fx + sx * ppm, py = fy + sy * ppm;
       const ang = 0.55 * Math.sin(t * 0.9 + ph) + (sy > 0 ? 0.35 : -0.15);
@@ -267,7 +267,7 @@ const SCENES = {
     // dock area
     ctx.fillStyle = '#16231a'; ctx.fillRect(0, 200, W, 300);
     ctx.strokeStyle = 'rgba(255,191,60,0.5)'; ctx.setLineDash([10, 8]); ctx.strokeRect(70, 255, 380, 150); ctx.setLineDash([]);
-    text('FLATRACK DROP POINT', 260, 245, 15, AMBER, 700, 'center');
+    text('FLATRACK DROP POINT', 260, 425, 15, AMBER, 700, 'center');
     const rate = 1.3, obstacleX = 300, stopAt = 230 + PLS_L * ppm; // reversing at ~1.3 m/s
     const startX = ph === 1 ? obstacleX + 24 + PLS_L * ppm + 2.2 * rate * ppm : ph === 2 ? stopAt + 2.6 * rate * ppm : stopAt + 4 * rate * ppm;
     let travel = clamp(lt - 0.5, 0, ph === 3 ? 1.2 : 99) * rate * ppm;
@@ -278,12 +278,12 @@ const SCENES = {
     let gx = 0, gy = 0, inSight = true;
     if (ph >= 2) {
       if (ph === 2 && fx <= stopAt) { fx = stopAt; stopped = true; }
-      gx = rearX() - 60; gy = 430;
-      if (ph === 3) { const out = smooth(1.2, 2.2, lt); gx = lerp(rearX() - 60, rearX() + 120, out); gy = lerp(430, 470, out); inSight = out < 0.35; stopped = !inSight; }
+      gx = rearX() - 60; gy = 236;
+      if (ph === 3) { const out = smooth(1.2, 2.2, lt); gx = lerp(rearX() - 60, rearX() + 120, out); gy = lerp(236, 214, out); inSight = out < 0.35; stopped = !inSight; }
     }
     if (ph === 1) { ctx.fillStyle = hit ? RED : '#6d8070'; roundRect(obstacleX - 10, 300, 34, 60, 4); ctx.fill(); text('hidden obstacle', obstacleX + 7, 290, 13, '#9dbba2', 600, 'center'); }
     plsTop(fx, 330, ppm, {});
-    const mirX = fx - 2.0 * ppm, mirY = 330 + PLS_W * ppm / 2 + 6;
+    const mirX = fx - PLS_MIRROR.u * ppm, mirY = 330 - PLS_W * ppm / 2 - 6;  // driver's side
     ctx.fillStyle = 'rgba(255,77,77,0.12)'; ctx.fillRect(rearX() - 160, 330 - PLS_W * ppm / 2 - 20, 160, PLS_W * ppm + 40);
     text('blind zone', rearX() - 80, 330 - PLS_W * ppm / 2 - 28, 13, '#ff8a8a', 600, 'center');
     if (ph >= 2) {
@@ -291,7 +291,7 @@ const SCENES = {
       ctx.fillStyle = '#d8f5dc'; ctx.beginPath(); ctx.arc(gx, gy, 10, 0, 7); ctx.fill();
       const wave = Math.sin(t * 6) * 0.5; ctx.strokeStyle = '#eaffef'; ctx.shadowColor = '#9dffb0'; ctx.shadowBlur = 16; ctx.lineWidth = 5;
       for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(gx + s * 8, gy); ctx.lineTo(gx + s * (8 + 22 * Math.cos(wave)), gy - 22 * Math.sin(wave + 0.8)); ctx.stroke(); }
-      ctx.shadowBlur = 0; text('GROUND GUIDE (IR wands)', gx, gy + 34, 14, '#c9e8cd', 700, 'center');
+      ctx.shadowBlur = 0; text('GROUND GUIDE (IR wands)', gx, gy - 26, 14, '#c9e8cd', 700, 'center');
     }
     if (ph === 1) tag(hit ? 'IMPACT — NO GROUND GUIDE' : 'BACKING WITHOUT A GROUND GUIDE', 640, 130, RED, 1, 22);
     if (ph === 2) tag(stopped ? 'GUIDE SIGNALS STOP — DRIVER STOPS' : 'GROUND GUIDE IN SIGHT', 640, 130, GREEN, 1, 22);

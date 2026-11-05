@@ -132,7 +132,7 @@ const SCENES = {
     zone(284, fy - 60, 90, 120, RZ, '', reveal(sStart(2) + 2.6));
     text('between truck', 325, fy + 86, 13, RED, 800, 'center', reveal(sStart(2) + 2.6)); text('& object', 325, fy + 102, 13, RED, 800, 'center', reveal(sStart(2) + 2.6));
     plsTop(fx, fy, ppm, {});
-    const mx = fx - 2.0 * ppm, my = top - 6, gx = rear - 40, gy = top - 55;
+    const mx = fx - PLS_MIRROR.u * ppm, my = top - 6, gx = rear - 40, gy = top - 55;
     const a1 = reveal(sStart(1) + 0.2);
     lineTo(mx, my, gx, gy, 'rgba(93,255,122,0.8)');
     ctx.globalAlpha = a1; guideTop(gx, gy, '#d8f5dc', '#9dffb0', t); ctx.globalAlpha = 1;
@@ -174,16 +174,15 @@ const SCENES = {
     const ph2 = t > sStart(2) - 0.2;
     // flatrack sliding off during load handling
     const slide = ph2 ? smooth(sStart(2) + 0.5, sEnd(2) + 0.5, t) * 150 : 0;
-    plsTop(fx, fy, ppm, {});
+    if (ph2) zone(rear - 190, top - 30, (PLS.LF - PLS.hook[0]) * ppm + 190, PLS_W * ppm + 60, RZ, 'LOAD HANDLING — STAY CLEAR OF HOOK ARM & FLATRACK PATH', reveal(sStart(2) + 0.3));
+    plsTop(fx, fy, ppm, { rackShift: slide / ppm });
     if (ph2) {
-      zone(rear - 190, top - 30, PLS_L * ppm - 2.7 * ppm + 190, PLS_W * ppm + 60, RZ, 'LOAD HANDLING — STAY CLEAR OF HOOK ARM & FLATRACK PATH', reveal(sStart(2) + 0.3));
-      ctx.fillStyle = '#6f7c52'; ctx.fillRect(rear - slide, top + 4, PLS_L * ppm - 3.3 * ppm, PLS_W * ppm - 8);
-      ctx.fillStyle = '#3b442c'; ctx.fillRect(fx - 3.1 * ppm - slide * 0.6, fy - 0.5 * ppm, 0.4 * ppm + slide * 0.6, ppm);
-      text('hook arm', fx - 3.0 * ppm - slide * 0.3, fy + 44, 13, '#c9e8cd', 700, 'center');
+      ctx.fillStyle = '#3b442c'; ctx.fillRect(fx - PLS.hook[1] * ppm - slide * 0.6, fy - 0.45 * ppm, (PLS.hook[1] - PLS.hook[0]) * ppm + slide * 0.6, 0.9 * ppm);
+      text('hook arm', fx - PLS.hook[0] * ppm - slide * 0.3, fy + 44, 13, '#c9e8cd', 700, 'center');
     } else {
       zone(rear - 170, top, 170, PLS_W * ppm, RZ, 'BLIND SPOT', 1);
     }
-    const mx = fx - 2.0 * ppm, my = top - 6;
+    const mx = fx - PLS_MIRROR.u * ppm, my = top - 6;
     const k = ph2 ? 1 : smooth(sStart(0) + 1, sStart(0) + 3.5, t);
     const gx = lerp(rear - 40, rear - 90, k), gy = lerp(top - 55, fy, k);
     const seen = k < 0.45;
