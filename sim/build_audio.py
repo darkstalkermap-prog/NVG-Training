@@ -27,17 +27,18 @@ SR = 24000 if _kokoro else 16000
 
 LEAD, GAP, TAIL = 0.6, 0.38, 1.0
 
-# Caption text -> spoken text
+# Caption text -> spoken text. Letters are hyphenated where Kokoro would
+# otherwise read a lone "A" as the article "uh" (check with Kokoro.tokenizer.phonemize).
 SAY = [
-    (r"AN/PVS-14", "A N P V S fourteen"),
+    (r"AN/PVS-14", "A-N P V S fourteen"),
     (r"PVS-14", "P V S fourteen"),
-    (r"AR 600-55", "A R six-hundred fifty-five"),
-    (r"AR 385-10", "A R three-eighty-five ten"),
+    (r"AR 600-55", "A-R six-hundred fifty-five"),
+    (r"AR 385-10", "A-R three-eighty-five ten"),
     (r"TC 21-305-2", "T C twenty-one, three-oh-five, dash two"),
-    (r"DA Form 5984-E", "D A Form fifty-nine eighty-four E"),
-    (r"M1075A1", "M ten-seventy-five A one"),
+    (r"DA Form 5984-E", "D, A, Form fifty-nine eighty-four E"),
+    (r"M1075A1", "M ten-seventy-five A-one"),
     (r"NVG-compatible", "N V G compatible"),
-    (r"\bNVDs\b", "N V Ds"),
+    (r"\bNVDs\b", "N V Dees"),
     (r"\bNVD\b", "N V D"),
     (r"\bPMCS\b", "P M C S"),
     (r"\bPLS\b", "P L S"),
