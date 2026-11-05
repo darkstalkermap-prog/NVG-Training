@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 // Render sim/index.html to MP4 deterministically (frame by frame) and mux narration.
-// Usage: node sim/render.js [--fps 30] [--workers 4] [--stills t1,t2,...]
+// Usage: node sim/render.js [--dir sim] [--out file.mp4] [--fps 30] [--workers 4] [--stills t1,t2,...]
 const { chromium } = require('playwright');
 const { spawn, execFileSync } = require('child_process');
 const path = require('path'), fs = require('fs');
 
-const ROOT = path.resolve(__dirname, '..'), BUILD = path.join(ROOT, 'build');
+const ROOT = path.resolve(__dirname, '..');
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
+const DIR = path.resolve(ROOT, arg('dir', 'sim')), BUILD = path.join(ROOT, 'build', path.basename(DIR));
 const FPS = +arg('fps', 30), WORKERS = +arg('workers', 4), STILLS = arg('stills', null);
 const OUT = path.join(ROOT, arg('out', 'NVG_PVS-14_PLS_Dos_and_Donts.mp4'));
-const URL = 'file://' + path.join(ROOT, 'sim', 'index.html') + '?render';
+const URL = 'file://' + path.join(DIR, 'index.html') + '?render';
 
 async function page(browser) {
   const p = await browser.newPage({ viewport: { width: 1280, height: 720 } });

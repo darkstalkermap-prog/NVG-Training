@@ -7,15 +7,16 @@ Voice: Kokoro neural TTS (kokoro-onnx) when its model files are present, else es
   https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0
   placed in $NVG_KOKORO_DIR (default: models/ in the repo root, git-ignored).
 
-Usage: python3 sim/build_audio.py
-Outputs: build/narration.wav, sim/narration.m4a, sim/timeline.js
+Usage: python3 sim/build_audio.py [video_dir]   (default: sim)
+Outputs: build/<video>/narration.wav, <video_dir>/narration.m4a, <video_dir>/timeline.js
 """
 import json, os, re, subprocess, tempfile, wave
 import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SIM = os.path.join(ROOT, "sim")
-BUILD = os.path.join(ROOT, "build")
+import sys
+SIM = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(ROOT, "sim")
+BUILD = os.path.join(ROOT, "build", os.path.basename(SIM))
 KOKORO_DIR = os.environ.get("NVG_KOKORO_DIR", os.path.join(ROOT, "models"))
 KOKORO_VOICE = os.environ.get("NVG_VOICE", "am_michael")
 ESPEAK_VOICE = "mb-us2"
@@ -40,6 +41,8 @@ SAY = [
     (r"PVS-14", "P V S fourteen"),
     (r"AR 600-55", "A-R six-hundred fifty-five"),
     (r"AR 385-10", "A-R three-eighty-five ten"),
+    (r"TC 21-60", "T C twenty-one sixty"),
+    (r"\bIR\b", "I-R"),
     (r"TC 21-305-2", "T C twenty-one, three-oh-five, dash two"),
     (r"DA Form 5984-E", "D, A, Form fifty-nine eighty-four E"),
     (r"M1075A1", "M ten-seventy-five A-one"),
@@ -125,7 +128,7 @@ def main():
             track[i0:i0 + len(s["audio"])] += s["audio"].astype(np.float32) / 32768.0
             sents.append({"text": s["text"], "start": round(cur, 3), "dur": round(s["dur"], 3)})
             cur += s["dur"] + GAP
-        timeline["scenes"].append({k: sc[k] for k in ("id", "type", "kind", "title", "ref")} |
+        timeline["scenes"].append({k: v for k, v in sc.items() if k not in ("text", "sents", "base")} |
                                   {"start": round(t, 3), "dur": round(dur, 3), "sentences": sents})
         t += dur
     peak = np.max(np.abs(track)) or 1
