@@ -9,17 +9,17 @@ window.TIMELINE = {
    "title": "NVG Driving: Do's & Don'ts",
    "ref": "AR 600-55",
    "start": 0.0,
-   "dur": 22.203,
+   "dur": 22.25,
    "sentences": [
     {
      "text": "Night vision driving: do's and don'ts.",
-     "start": 0.657,
+     "start": 0.639,
      "dur": 2.415
     },
     {
      "text": "This simulation covers operating the M1075A1 Palletized Load System truck while wearing the AN/PVS-14 monocular night vision device, under the Army Driver and Operator Standardization Program, AR 600-55.",
-     "start": 3.453,
-     "dur": 17.693
+     "start": 3.434,
+     "dur": 17.776
     }
    ]
   },
@@ -29,32 +29,32 @@ window.TIMELINE = {
    "kind": "info",
    "title": "AR 600-55: NVD Driver Requirements",
    "ref": "AR 600-55 \u00b7 TC 21-305-2",
-   "start": 22.203,
-   "dur": 36.17,
+   "start": 22.25,
+   "dur": 36.822,
    "sentences": [
     {
      "text": "AR 600-55 sets the rules.",
-     "start": 0.657,
-     "dur": 2.773
+     "start": 0.639,
+     "dur": 2.83
     },
     {
      "text": "Before you drive under night vision devices, you must already be licensed on the M1075A1.",
-     "start": 3.81,
-     "dur": 6.488
+     "start": 3.849,
+     "dur": 6.588
     },
     {
      "text": "You then complete NVD driver training: academic instruction, hands-on device training, and a supervised night practical, following TC 21-305-2.",
-     "start": 10.678,
+     "start": 10.817,
      "dur": 12.298
     },
     {
      "text": "Once you pass, the NVD qualification is recorded on your operator license record, DA Form 5984-E.",
-     "start": 23.356,
-     "dur": 8.558
+     "start": 23.495,
+     "dur": 9.089
     },
     {
      "text": "Stay current through your unit's sustainment program.",
-     "start": 32.294,
+     "start": 32.964,
      "dur": 2.818
     }
    ]
@@ -65,22 +65,22 @@ window.TIMELINE = {
    "kind": "dont",
    "title": "Drive Unqualified",
    "ref": "AR 600-55",
-   "start": 58.373,
-   "dur": 17.13,
+   "start": 59.071,
+   "dur": 16.934,
    "sentences": [
     {
      "text": "Don't drive under NVDs if the qualification is not on your license record.",
-     "start": 0.657,
-     "dur": 5.397
+     "start": 0.639,
+     "dur": 5.238
     },
     {
      "text": "Being licensed on the PLS in daylight is not the same as being qualified to drive it on goggles.",
-     "start": 6.435,
+     "start": 6.257,
      "dur": 6.686
     },
     {
      "text": "No annotation, no NVD driving.",
-     "start": 13.501,
+     "start": 13.324,
      "dur": 2.571
     }
    ]
@@ -91,32 +91,32 @@ window.TIMELINE = {
    "kind": "do",
    "title": "PMCS the PVS-14",
    "ref": "Operator TM \u00b7 Unit SOP",
-   "start": 75.503,
-   "dur": 20.221,
+   "start": 76.005,
+   "dur": 20.185,
    "sentences": [
     {
      "text": "Do perform PMCS on the PVS-14 before every mission.",
-     "start": 0.657,
+     "start": 0.639,
      "dur": 4.808
     },
     {
      "text": "Check the battery, and carry a spare.",
-     "start": 5.845,
+     "start": 5.827,
      "dur": 1.938
     },
     {
      "text": "Inspect the lenses for cracks, scratches, and dirt.",
-     "start": 8.163,
+     "start": 8.145,
      "dur": 2.942
     },
     {
      "text": "Confirm the mount locks securely and the device sits stable on your helmet.",
-     "start": 11.485,
+     "start": 11.467,
      "dur": 4.316
     },
     {
      "text": "Watch for the low battery indicator in the eyepiece.",
-     "start": 16.181,
+     "start": 16.163,
      "dur": 2.983
     }
    ]
@@ -127,27 +127,27 @@ window.TIMELINE = {
    "kind": "do",
    "title": "Focus Correctly",
    "ref": "TC 21-305-2",
-   "start": 95.724,
-   "dur": 18.512,
+   "start": 96.19,
+   "dur": 18.475,
    "sentences": [
     {
      "text": "Do focus the device correctly.",
-     "start": 0.657,
+     "start": 0.639,
      "dur": 1.805
     },
     {
      "text": "First, set the eyepiece diopter until the image noise is sharp.",
-     "start": 2.842,
+     "start": 2.824,
      "dur": 3.766
     },
     {
      "text": "Then adjust the objective focus at a distance, out past the front bumper, where you need to see the road.",
-     "start": 6.988,
+     "start": 6.97,
      "dur": 6.349
     },
     {
      "text": "A poorly focused tube dramatically cuts your detection range.",
-     "start": 13.717,
+     "start": 13.699,
      "dur": 3.737
     }
    ]
@@ -158,22 +158,22 @@ window.TIMELINE = {
    "kind": "do",
    "title": "Drive as a Crew",
    "ref": "TC 21-305-2 \u00b7 Unit SOP",
-   "start": 114.236,
-   "dur": 20.448,
+   "start": 114.665,
+   "dur": 20.114,
    "sentences": [
     {
      "text": "Do drive as a crew.",
-     "start": 0.657,
+     "start": 0.639,
      "dur": 1.293
     },
     {
      "text": "Your assistant driver or vehicle commander should also be wearing NVDs, calling out hazards, and watching the right side of a ten-wheel truck that is longer and wider than your goggles make it feel.",
-     "start": 2.33,
-     "dur": 12.789
+     "start": 2.312,
+     "dur": 12.491
     },
     {
      "text": "Brief the route, the hazards, and the risk assessment before you roll.",
-     "start": 15.5,
+     "start": 15.183,
      "dur": 3.891
     }
    ]
@@ -184,22 +184,22 @@ window.TIMELINE = {
    "kind": "dont",
    "title": "Use White Light in the Cab",
    "ref": "TC 21-305-2",
-   "start": 134.684,
-   "dur": 19.688,
+   "start": 134.779,
+   "dur": 19.651,
    "sentences": [
     {
      "text": "Don't use white light in the cab.",
-     "start": 0.657,
+     "start": 0.639,
      "dur": 1.704
     },
     {
      "text": "A flashlight, a phone screen, or bright dash lighting will wash out the image, and destroy the dark adaptation of your unaided eye.",
-     "start": 2.741,
+     "start": 2.723,
      "dur": 8.584
     },
     {
      "text": "Dim the instrument panel, and use only NVG-compatible or filtered light when the crew needs to read.",
-     "start": 11.705,
+     "start": 11.687,
      "dur": 6.925
     }
    ]
@@ -210,27 +210,27 @@ window.TIMELINE = {
    "kind": "do",
    "title": "Scan Constantly",
    "ref": "TC 21-305-2",
-   "start": 154.372,
-   "dur": 20.129,
+   "start": 154.43,
+   "dur": 20.093,
    "sentences": [
     {
      "text": "Do keep your head moving.",
-     "start": 0.657,
+     "start": 0.639,
      "dur": 1.309
     },
     {
      "text": "The PVS-14 gives you only a forty-degree field of view, a narrow tube compared to normal vision.",
-     "start": 2.347,
+     "start": 2.329,
      "dur": 7.131
     },
     {
      "text": "Scan left, center, and right, and check both mirrors with your unaided eye.",
-     "start": 9.858,
+     "start": 9.84,
      "dur": 4.54
     },
     {
      "text": "Objects outside the circle simply do not exist to you until you look.",
-     "start": 14.778,
+     "start": 14.76,
      "dur": 4.294
     }
    ]
@@ -241,27 +241,27 @@ window.TIMELINE = {
    "kind": "dont",
    "title": "Overdrive Your Goggles",
    "ref": "TC 21-305-2 \u00b7 Risk Assessment",
-   "start": 174.501,
-   "dur": 21.361,
+   "start": 174.523,
+   "dur": 21.325,
    "sentences": [
     {
      "text": "Don't overdrive your goggles.",
-     "start": 0.657,
+     "start": 0.639,
      "dur": 1.662
     },
     {
      "text": "The PLS is a heavy truck, and its stopping distance grows quickly with speed.",
-     "start": 2.7,
+     "start": 2.682,
      "dur": 5.055
     },
     {
      "text": "If you can only detect a hazard at the edge of your NVD range, your speed must let you stop well inside that distance.",
-     "start": 8.135,
+     "start": 8.117,
      "dur": 7.729
     },
     {
      "text": "Reduce speed for dust, rain, low illumination, and rough terrain.",
-     "start": 16.244,
+     "start": 16.226,
      "dur": 4.059
     }
    ]
@@ -272,22 +272,22 @@ window.TIMELINE = {
    "kind": "dont",
    "title": "Stare Into Bright Lights",
    "ref": "TC 21-305-2",
-   "start": 195.862,
-   "dur": 16.156,
+   "start": 195.848,
+   "dur": 16.119,
    "sentences": [
     {
      "text": "Don't stare into bright light sources.",
-     "start": 0.657,
+     "start": 0.639,
      "dur": 1.95
     },
     {
      "text": "Headlights, fires, and illumination rounds cause blooming and halos that hide everything around them.",
-     "start": 2.988,
+     "start": 2.97,
      "dur": 6.109
     },
     {
      "text": "Look away from the source, keep the truck in your lane, and slow down until the device recovers.",
-     "start": 9.477,
+     "start": 9.459,
      "dur": 5.621
     }
    ]
@@ -298,22 +298,22 @@ window.TIMELINE = {
    "kind": "do",
    "title": "Keep Your Interval",
    "ref": "Convoy Brief \u00b7 Unit SOP",
-   "start": 212.018,
-   "dur": 16.802,
+   "start": 211.967,
+   "dur": 16.765,
    "sentences": [
     {
      "text": "Do maintain increased intervals in convoy.",
-     "start": 0.657,
+     "start": 0.639,
      "dur": 2.509
     },
     {
      "text": "Depth perception is poor through a monocular, so closing speed is hard to judge.",
-     "start": 3.546,
+     "start": 3.528,
      "dur": 5.077
     },
     {
      "text": "Use the infrared markers on the vehicle ahead, keep the interval set in the convoy brief, and never tailgate.",
-     "start": 9.003,
+     "start": 8.985,
      "dur": 6.741
     }
    ]
@@ -324,22 +324,22 @@ window.TIMELINE = {
    "kind": "dont",
    "title": "Back Without a Ground Guide",
    "ref": "AR 385-10 \u00b7 Unit SOP",
-   "start": 228.82,
-   "dur": 16.087,
+   "start": 228.732,
+   "dur": 16.05,
    "sentences": [
     {
      "text": "Don't back the PLS without a ground guide, day or night.",
-     "start": 0.657,
+     "start": 0.639,
      "dur": 3.542
     },
     {
      "text": "At night, the ground guide uses infrared chemlights or wands that the driver can see through the PVS-14.",
-     "start": 4.579,
+     "start": 4.561,
      "dur": 7.034
     },
     {
      "text": "If you lose sight of the ground guide, stop immediately.",
-     "start": 11.993,
+     "start": 11.975,
      "dur": 3.036
     }
    ]
@@ -350,22 +350,22 @@ window.TIMELINE = {
    "kind": "do",
    "title": "Manage Fatigue",
    "ref": "Unit Driver Rest Plan",
-   "start": 244.907,
-   "dur": 14.806,
+   "start": 244.782,
+   "dur": 14.77,
    "sentences": [
     {
      "text": "Do manage fatigue.",
-     "start": 0.657,
+     "start": 0.639,
      "dur": 1.278
     },
     {
      "text": "NVD driving is mentally and visually demanding.",
-     "start": 2.315,
+     "start": 2.297,
      "dur": 3.437
     },
     {
      "text": "Follow your unit's driver rest plan, rotate drivers when allowed, and speak up if you are too tired to drive safely.",
-     "start": 6.133,
+     "start": 6.115,
      "dur": 7.616
     }
    ]
@@ -376,22 +376,22 @@ window.TIMELINE = {
    "kind": "info",
    "title": "Recap",
    "ref": "AR 600-55",
-   "start": 259.713,
-   "dur": 23.858,
+   "start": 259.552,
+   "dur": 23.922,
    "sentences": [
     {
      "text": "To recap.",
-     "start": 0.657,
+     "start": 0.639,
      "dur": 0.746
     },
     {
      "text": "Do: be NVD qualified per AR 600-55, PMCS and focus the PVS-14, drive as a crew, scan constantly, keep your intervals, and manage fatigue.",
-     "start": 1.784,
-     "dur": 13.336
+     "start": 1.766,
+     "dur": 13.436
     },
     {
      "text": "Don't: drive unqualified, use white light, overdrive your goggles, stare into lights, or back without a ground guide.",
-     "start": 15.5,
+     "start": 15.582,
      "dur": 7.301
     }
    ]
@@ -402,18 +402,18 @@ window.TIMELINE = {
    "kind": "info",
    "title": "Drive to Standard",
    "ref": "",
-   "start": 283.571,
-   "dur": 16.429,
+   "start": 283.474,
+   "dur": 16.526,
    "sentences": [
     {
      "text": "Train as you fight, and drive to standard.",
-     "start": 0.657,
+     "start": 0.639,
      "dur": 2.365
     },
     {
      "text": "Verify all procedures against the current AR 600-55, TC 21-305-2, the vehicle technical manual, and your unit SOP.",
-     "start": 3.402,
-     "dur": 11.969
+     "start": 3.384,
+     "dur": 12.103
     }
    ]
   }
