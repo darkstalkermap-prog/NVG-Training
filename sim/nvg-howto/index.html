@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NVG Mounting How-To</title>
+<style>
+  :root { --bg:#050806; --fg:#d8f5dc; --muted:#7f9a84; --accent:#5dff7a; }
+  html,body { margin:0; background:var(--bg); color:var(--fg); font-family: Inter, "DejaVu Sans", system-ui, sans-serif; }
+  #wrap { max-width:1280px; margin:0 auto; padding-block:16px; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); box-sizing:border-box; }
+  canvas { width:100%; height:auto; display:block; background:#000; border-radius:6px; }
+  #ctl { display:flex; gap:12px; align-items:center; margin-top:10px; }
+  #ctl button { background:#12301a; color:var(--fg); border:1px solid #2c5a36; border-radius:4px; padding:6px 14px; font:inherit; cursor:pointer; }
+  #ctl button:focus-visible, #ctl input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  #ctl input { flex:1; min-width:0; accent-color: var(--accent); }
+  #tc { font-variant-numeric: tabular-nums; color:var(--muted); min-width:90px; text-align:right; }
+  body.render #wrap { padding:0 !important; max-width:none; } body.render #ctl { display:none; } body.render canvas { border-radius:0; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c" width="1280" height="720"></canvas>
+  <div id="ctl"><button id="play">Play</button><input id="seek" type="range" min="0" max="300" step="0.01" value="0"><span id="tc">0:00</span></div>
+  <audio id="aud" src="narration.m4a" preload="auto"></audio>
+</div>
+<script src="timeline.js"></script>
+<script src="../engine.js"></script>
+<script>
+"use strict";
+// ---------- helmet + mount + PVS-14 rig (side view, facing right) ----------
+// o: mountIn, devIn (0..1 slide into place), flip (0 = in use, 1 = stowed up), sag (rad), wobble (rad, head),
+//    strap (0 loose .. 1 tight), cw (counterweight 0..1), lanyard (0..1), power (bool), relief (px), height (px),
+//    drop (0..1 device falling, caught by lanyard), hl: {shroud, mount, device, lanyard, cw, strap, knobs, eye}
+function rig(cx, cy, s, o = {}) {
+  const hl = o.hl || {}, mountIn = o.mountIn ?? 1, devIn = o.devIn ?? 1;
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s); ctx.rotate(o.wobble || 0);
+  const glowStroke = v => { if (!v) return; ctx.save(); ctx.strokeStyle = `rgba(93,255,122,${0.35 + 0.65 * v})`; ctx.lineWidth = 3 / s * 1.6; ctx.shadowColor = GREEN; ctx.shadowBlur = 14 * v; ctx.stroke(); ctx.restore(); };
+  // neck + head
+  ctx.fillStyle = '#2e362f'; ctx.fillRect(-28, 50, 52, 90);
+  ctx.fillStyle = '#3a443b'; ctx.beginPath(); ctx.ellipse(0, 0, 68, 84, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(62, -2); ctx.lineTo(80, 22); ctx.lineTo(60, 28); ctx.fill();       // nose
+  ctx.fillStyle = '#d8e8da'; ctx.beginPath(); ctx.ellipse(50, -8, 7, 4.5, 0, 0, 7); ctx.fill();   // eye
+  ctx.fillStyle = '#1b231e'; ctx.beginPath(); ctx.arc(53, -8, 2.6, 0, 7); ctx.fill();
+  if (hl.eye) { ctx.beginPath(); ctx.arc(50, -8, 12, 0, 7); glowStroke(hl.eye); }
+  // chin strap
+  const st = o.strap ?? 1;
+  ctx.strokeStyle = '#1e2318'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(-62, 18); ctx.quadraticCurveTo(-10, 100 + (1 - st) * 40, 46, 64 + (1 - st) * 26); ctx.stroke();
+  if (hl.strap) { ctx.beginPath(); ctx.moveTo(-62, 18); ctx.quadraticCurveTo(-10, 100 + (1 - st) * 40, 46, 64 + (1 - st) * 26); glowStroke(hl.strap); }
+  // helmet
+  ctx.fillStyle = '#56603f'; ctx.beginPath(); ctx.arc(0, -12, 94, Math.PI - 0.32, 2 * Math.PI - 0.32); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#4a5336'; ctx.fillRect(-94, -14, 186, 8);
+  // counterweight
+  const cw = o.cw ?? 1;
+  if (cw > 0) { ctx.save(); ctx.globalAlpha = cw; ctx.translate(-92, -46); ctx.rotate(-0.35); ctx.fillStyle = '#2a2f25'; roundRect(-16, -24, 26, 48, 5); ctx.fill(); if (hl.cw) { roundRect(-16, -24, 26, 48, 5); glowStroke(hl.cw); } ctx.restore(); }
+  // shroud on the helmet front
+  ctx.save(); ctx.translate(70, -76); ctx.rotate(0.75); ctx.fillStyle = '#23281f'; roundRect(-16, -9, 32, 18, 4); ctx.fill(); if (hl.shroud) { roundRect(-16, -9, 32, 18, 4); glowStroke(hl.shroud); } ctx.restore();
+  // mount + device, rotating about the pivot
+  const px = 86 + (1 - mountIn) * 90, py = -64 - (1 - mountIn) * 34;
+  const a = -(o.flip || 0) * 1.95 + (o.sag || 0) + (o.drop || 0) * 1.2;
+  ctx.save(); ctx.translate(px, py); ctx.rotate(a);
+  // mount body + arm
+  ctx.fillStyle = '#2b3026'; roundRect(-10, -12, 26, 24, 5); ctx.fill(); if (hl.mount) { roundRect(-10, -12, 26, 24, 5); glowStroke(hl.mount); }
+  const armL = 40 + (o.height || 0);
+  ctx.fillStyle = '#353b2f'; ctx.fillRect(-4, 4, 12, armL); if (hl.mount) { ctx.beginPath(); ctx.rect(-4, 4, 12, armL); glowStroke(hl.mount); }
+  ctx.fillStyle = '#9dbba2'; for (const [kx, ky] of [[3, 2], [2, armL - 6]]) { ctx.beginPath(); ctx.arc(kx, ky, 4, 0, 7); ctx.fill(); if (hl.knobs) { ctx.beginPath(); ctx.arc(kx, ky, 6, 0, 7); glowStroke(hl.knobs); } }
+  // device (slides in from the front while devIn < 1; drops when o.drop)
+  const dx = (1 - devIn) * 130 + (o.relief || 0), dy = armL + 4 + (o.drop || 0) * 30;
+  ctx.save(); ctx.translate(dx, dy); if (o.devFade !== undefined) ctx.globalAlpha *= o.devFade;
+  ctx.fillStyle = '#2f3a33'; roundRect(-26, 0, 104, 26, 9); ctx.fill();
+  ctx.fillStyle = '#1b231e'; roundRect(-42, 3, 18, 20, 5); ctx.fill();            // eyepiece / eyecup
+  ctx.fillStyle = '#1b231e'; roundRect(76, -3, 24, 32, 6); ctx.fill();            // objective
+  ctx.fillStyle = o.caps ? '#4b5a4f' : '#4a7d6a'; ctx.fillRect(98, 0, 4, 26);
+  ctx.fillStyle = '#26302a'; ctx.beginPath(); ctx.arc(30, 30, 9, 0, 7); ctx.fill(); // battery cap
+  if (hl.device) { ctx.beginPath(); roundRect(-42, -3, 144, 34, 8); glowStroke(hl.device); }
+  if (o.power && !(o.flip > 0.5)) { const g = ctx.createRadialGradient(-44, 13, 1, -44, 13, 26); g.addColorStop(0, 'rgba(125,255,145,0.9)'); g.addColorStop(1, 'rgba(125,255,145,0)'); ctx.fillStyle = g; ctx.fillRect(-72, -14, 56, 54); }
+  const lan = o.lanyard ?? 1;
+  ctx.restore(); ctx.restore();
+  ctx.globalAlpha = 1;
+  // lanyard from device to helmet side (drawn in head space)
+  if (lan > 0) {
+    const ca = Math.cos(a), sa = Math.sin(a), lx = 40 + (1 - devIn) * 130, ly = 40 + (o.height || 0) + 26 + (o.drop || 0) * 30;
+    const ex = px + lx * ca - ly * sa, ey = py + lx * sa + ly * ca;
+    ctx.globalAlpha = lan; ctx.strokeStyle = '#c9a646'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(ex, ey); ctx.quadraticCurveTo((ex + 20) / 2, ey + 40 * (1 - (o.drop || 0)), 20, -30); ctx.stroke(); ctx.globalAlpha = 1;
+    if (hl.lanyard) { ctx.beginPath(); ctx.moveTo(ex, ey); ctx.quadraticCurveTo((ex + 20) / 2, ey + 40 * (1 - (o.drop || 0)), 20, -30); glowStroke(hl.lanyard); }
+  }
+  ctx.restore();
+}
+function label(textS, x, y, tx, ty, a, col = '#eaffef') {
+  if (a <= 0) return; ctx.globalAlpha = a; ctx.strokeStyle = 'rgba(157,255,176,0.7)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(tx, ty); ctx.stroke();
+  ctx.fillStyle = GREEN; ctx.beginPath(); ctx.arc(tx, ty, 4, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+  ctx.font = `700 19px ${FONT}`; const w = ctx.measureText(textS).width + 22; const bx = x < tx ? x - w : x;
+  ctx.globalAlpha = a; ctx.fillStyle = 'rgba(0,0,0,0.75)'; roundRect(bx, y - 18, w, 30, 6); ctx.fill(); ctx.globalAlpha = 1; text(textS, bx + 11, y + 4, 19, col, 700, 'left', a);
+}
+function checklist(x, y, items, t0s, size = 20, gap = 54, w = 470) {
+  items.forEach((s, i) => { const a = reveal(t0s[i], 0.4); const yy = y + i * gap; ctx.globalAlpha = 0.25 + 0.75 * a; ctx.strokeStyle = '#3c7a4b'; ctx.lineWidth = 2; ctx.strokeRect(x, yy - 20, 28, 28); ctx.globalAlpha = 1;
+    if (a > 0) { ctx.globalAlpha = a; check(x + 14, yy - 6, 24); ctx.globalAlpha = 1; } wrap(s, w, size, 500).forEach((l, k) => text(l, x + 44, yy + k * (size + 4), size, '#d8f5dc', 500, 'left', 0.35 + 0.65 * a)); });
+}
+// small "view through the tube" inset
+function tubeInset(cx, cy, r, o = {}) {
+  drawRoadWorld({ camZ: 6000 + LT * 5, yaw: o.yaw || 0 });
+  ctx.save(); if (o.shiftY) ctx.translate(0, o.shiftY);
+  composeNVG({ cx, cy, r, blur: o.blur || 0, noiseBlur: o.nblur || 0 });
+  ctx.restore();
+  if (o.cut) { ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r + 4, 0, 7); ctx.arc(cx, cy, Math.max(1, r * (1 - o.cut)), 0, 7, true); ctx.fillStyle = '#000'; ctx.fill('evenodd'); ctx.restore(); }
+  ctx.strokeStyle = 'rgba(93,255,122,0.4)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, r + 6, 0, 7); ctx.stroke();
+  if (o.label) text(o.label, cx, cy + r + 32, 16, '#9dbba2', 700, 'center');
+}
+
+// ---------- scenes ----------
+const SCENES = {
+  title(t, d) {
+    drawRoadWorld({ camZ: 6000 + t * 7 });
+    composeNVG({ gain: smooth(0, 2, t) });
+    const a = smooth(0.6, 1.6, t) * (1 - smooth(d - 1.2, d - 0.2, t));
+    ctx.globalAlpha = a * 0.85; ctx.fillStyle = '#000'; ctx.fillRect(0, 140, W, 330); ctx.globalAlpha = 1;
+    ctx.globalAlpha = a; rig(1000, 310, 1.05, { power: true }); ctx.globalAlpha = 1;
+    text('HOW-TO', 90, 240, 26, '#7dff8f', 700, 'left', a);
+    text('Mounting Night Vision', 86, 316, 58, '#eaffef', 800, 'left', a);
+    text('AN/PVS-14  ·  Mount check  ·  Your eyes  ·  Benefits', 90, 366, 26, '#c9e8cd', 500, 'left', a);
+    text('For drivers, ground guides, and crews', 90, 402, 20, '#88a98d', 500, 'left', a);
+  },
+
+  benefits(t, d) {
+    const camZ = 6300 + t * 4, objs = [{ type: 'person', z: camZ + 30, x: 3.2 }, { type: 'truck', z: 6300 + 4 * 10 + 60, x: 1.4 }, { type: 'stake', z: camZ + 18, x: 4.6 }];
+    drawRoadWorld({ camZ, objects: objs, illum: 0.8 });
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    composeUnaided({ rect: [40, 150, 560, 380], radius: 10, gain: 0.26 });
+    composeNVG({ cx: 950, cy: 340, r: 210 });
+    text('NAKED EYE', 320, 136, 18, '#c3cfe8', 800, 'center'); text('THROUGH PVS-14', 950, 116, 18, '#9dffb0', 800, 'center');
+    const items = [['No white light needed', sStart(0) + 0.4], ['Terrain, obstacles, people', sStart(1) + 0.4], ['Light discipline · IR markers', sStart(1) + 3.0], ['Other eye free for mirrors', sStart(2) + 0.6]];
+    items.forEach(([s, at], i) => tag(s, i < 2 ? 320 : 950, 580 + (i % 2) * 0 - 0, GREEN, reveal(at) * (1 - reveal(i % 2 === 0 ? items[i + 1][1] : 999)), 15));
+  },
+
+  parts(t, d) {
+    mapBG();
+    const hl = { shroud: reveal(sStart(1)) * (1 - reveal(sStart(2))), mount: reveal(sStart(2)) * (1 - reveal(sStart(3))), device: reveal(sStart(2) + 1.5) * (1 - reveal(sStart(3))), lanyard: reveal(sStart(3)) * (1 - reveal(sStart(3) + 2.5)), cw: reveal(sStart(3) + 2.5) };
+    rig(560, 380, 1.9, { hl });
+    label('Helmet shroud (front bracket)', 380, 150, 560 + 70 * 1.9 - 10, 380 - 76 * 1.9, reveal(sStart(1) + 0.3));
+    label('Helmet mount', 860, 170, 560 + 92 * 1.9, 380 - 60 * 1.9, reveal(sStart(2) + 0.2));
+    label('AN/PVS-14', 980, 300, 560 + 150 * 1.9, 380 - 12 * 1.9, reveal(sStart(2) + 1.5));
+    label('Lanyard', 900, 470, 560 + 60 * 1.9, 380 - 8 * 1.9 + 60, reveal(sStart(3) + 0.3));
+    label('Counterweight', 200, 300, 560 - 92 * 1.9, 380 - 46 * 1.9, reveal(sStart(3) + 2.5));
+  },
+
+  inspect(t, d) {
+    mapBG();
+    const hl = { shroud: reveal(sStart(1)) * (1 - reveal(sStart(2))), mount: reveal(sStart(2)) * (1 - reveal(sStart(3))), knobs: reveal(sStart(3)) * (1 - reveal(sStart(4))), device: reveal(sStart(4)) };
+    rig(300, 380, 1.55, { hl });
+    panel(620, 130, 620, 400); text('Inspect before you mount', 650, 172, 22, '#eaffef', 800);
+    checklist(650, 230, ['Shroud screws tight, no cracks', 'Mount: no cracks, bends, or worn lock points', 'Every adjustment knob moves and locks', 'PMCS on the PVS-14'], [sStart(1) + 0.5, sStart(2) + 0.5, sStart(3) + 0.5, sStart(4) + 0.4], 20, 70, 500);
+  },
+
+  mount(t, d) {
+    mapBG();
+    const inT = smooth(sStart(1), sStart(1) + 1.6, t);
+    const tug = t > sStart(2) && t < sStart(2) + 1.6 ? Math.sin((t - sStart(2)) * 18) * 0.04 : 0;
+    rig(520, 380, 2.0, { mountIn: inT, devIn: 0, lanyard: 0, hl: { mount: 1, shroud: 1 - inT }, sag: tug });
+    if (inT >= 1) tag('CLICK — LOCKED', 900, 170, GREEN, reveal(sStart(1) + 1.6, 0.2) * (1 - reveal(sStart(2), 0.2)), 22);
+    tag('PULL TEST: NO MOVEMENT ✓', 900, 170, GREEN, reveal(sStart(2) + 1.0), 20);
+    tag('MOVES OR COMES OUT = NOT LOCKED', 900, 560, RED, reveal(sStart(3)), 18);
+  },
+
+  device(t, d) {
+    mapBG();
+    const inT = smooth(sStart(0) + 0.6, sStart(0) + 2.6, t), lan = reveal(sStart(1) + 0.8, 0.6);
+    const tug = t > sStart(0) + 3 && t < sStart(0) + 4.4 ? Math.sin(t * 18) * 0.035 : 0;
+    rig(500, 360, 2.0, { devIn: inT, lanyard: lan, sag: tug, hl: { device: 1 - reveal(sStart(1)), lanyard: lan } });
+    tag('LOCKED · PULL TESTED ✓', 900, 170, GREEN, reveal(sStart(0) + 4.4), 20);
+    tag('LANYARD ON — EVERY TIME', 900, 600, AMBER, lan, 20);
+  },
+
+  fit(t, d) {
+    mapBG();
+    const st = smooth(sStart(0) + 0.8, sStart(0) + 2.6, t), cw = reveal(sStart(2) + 0.5, 0.6);
+    const loose = t > sStart(1) - 0.2 && t < sStart(2) ? 1 : 0;
+    const wob = loose ? Math.sin(t * 7) * 0.05 : 0;
+    rig(480, 380, 1.9, { strap: loose ? 0.2 : st, wobble: wob, cw, hl: { strap: 1 - cw, cw } });
+    tubeInset(1000, 330, 170, { shiftY: loose ? Math.sin(t * 7) * 40 : 0, label: loose ? 'loose helmet = moving image' : 'steady image' });
+    tag('CHIN STRAP + RETENTION TIGHT', 480, 120, GREEN, reveal(sStart(0) + 2.6) * (1 - loose), 18);
+    tag('LOOSE HELMET', 480, 120, RED, loose, 18);
+    tag('COUNTERWEIGHT ON', 480, 120, GREEN, cw, 18);
+  },
+
+  adjust(t, d) {
+    mapBG();
+    const flip = 1 - smooth(sStart(0) + 0.2, sStart(0) + 1.8, t);
+    const hAdj = lerp(-14, 0, smooth(sStart(2) + 0.2, sStart(2) + 1.6, t));
+    const rel = lerp(30, 0, smooth(sStart(2) + 2.0, sStart(2) + 3.6, t));
+    const tilt = lerp(0.12, 0, smooth(sStart(3) + 0.2, sStart(3) + 1.2, t));
+    rig(430, 380, 1.9, { flip, height: hAdj, relief: rel, sag: tilt, power: flip < 0.2, hl: { eye: reveal(sStart(1)) * (1 - reveal(sStart(2))), knobs: reveal(sStart(2)) } });
+    const cut = flip > 0.3 ? 1 : clamp(rel / 30 * 0.45 + Math.abs(hAdj) / 14 * 0.2, 0, 0.9);
+    ctx.save(); ctx.translate(1000, 330); ctx.rotate(tilt * 1.5); ctx.translate(-1000, -330);
+    tubeInset(1000, 330, 170, { cut });
+    ctx.restore();
+    text(cut > 0.05 ? 'partial circle — adjust' : 'full circle, level image ✓', 1000, 540, 17, cut > 0.05 ? AMBER : GREEN, 800, 'center');
+    tag('HEIGHT', 160, 200, '#c9e8cd', reveal(sStart(2) + 0.1) * (1 - reveal(sStart(2) + 1.8)), 16);
+    tag('IN / OUT (EYE RELIEF)', 200, 200, '#c9e8cd', reveal(sStart(2) + 1.9) * (1 - reveal(sStart(3))), 16);
+    tag('TILT LEVEL', 160, 200, '#c9e8cd', reveal(sStart(3)), 16);
+  },
+
+  focus(t, d) {
+    mapBG();
+    const di = smooth(sStart(1) + 0.5, sEnd(1) - 0.5, t), ob = smooth(sStart(2) + 0.6, sEnd(2) - 0.5, t);
+    rig(330, 380, 1.6, { power: t > sStart(0) + 1, hl: { knobs: 0, device: reveal(sStart(0)) * (1 - reveal(sStart(1))) } });
+    tubeInset(930, 320, 220, { blur: lerp(lerp(7, 5.5, di), 0, ob), nblur: lerp(4, 0, di) });
+    text('1 · Diopter (eyepiece)', 330, 140, 18, t > sStart(1) && t < sStart(2) ? GREEN : '#9dbba2', 800, 'center');
+    text('2 · Objective focus', 330, 168, 18, t > sStart(2) && t < sStart(3) ? GREEN : '#9dbba2', 800, 'center');
+    tag('GLASSES / INSERTS ON WHILE FOCUSING', 640, 92, AMBER, reveal(sStart(3)), 16);
+  },
+
+  shake(t, d) {
+    mapBG();
+    const bad = t > sStart(2) ? 1 : 0;
+    const wob = Math.sin(t * 6) * 0.12 * smooth(sStart(0) + 0.5, sStart(0) + 1, t);
+    rig(430, 380, 1.9, { wobble: wob, sag: bad ? 0.18 + Math.sin(t * 6) * 0.12 : 0, power: true });
+    tubeInset(1000, 330, 170, { shiftY: bad ? Math.sin(t * 6) * 60 : 0, yaw: bad ? 0 : wob * 0.4 });
+    tag(bad ? 'IMAGE JUMPS — FIX BEFORE DRIVING' : 'IMAGE STEADY · NO SAG ✓', 1000, 560, bad ? RED : GREEN, reveal(sStart(1)), 18);
+  },
+
+  loose(t, d) {
+    mapBG();
+    const fall = smooth(sStart(2) + 0.4, sStart(2) + 1.2, t);
+    const sag = 0.22 + Math.sin(t * 5) * 0.14 * (1 - fall);
+    rig(430, 360, 1.9, { sag, drop: fall, power: fall < 0.5, lanyard: 1, wobble: Math.sin(t * 5) * 0.04, hl: { lanyard: fall } });
+    tubeInset(1000, 330, 170, { shiftY: Math.sin(t * 5) * 70 * (1 - fall), yaw: Math.sin(t * 3) * 0.1 });
+    if (fall > 0.5) { ctx.fillStyle = 'rgba(0,0,0,0.85)'; ctx.beginPath(); ctx.arc(1000, 330, 176, 0, 7); ctx.fill(); text('NO IMAGE', 1000, 338, 24, RED, 800, 'center'); }
+    tag('BOUNCING IMAGE · NECK STRAIN', 640, 92, RED, reveal(sStart(1)) * (1 - fall), 18);
+    tag('DEVICE FALLS — LANYARD CATCHES IT', 640, 92, AMBER, fall, 18);
+  },
+
+  eyes(t, d) {
+    mapBG();
+    const cards = [['Eye strain, fatigue, headaches', 'from long use', sStart(1)], ['Less detail, poor depth', 'through the tube', sStart(2)], ['Two different images', 'one eye aided, one not — takes effort', sStart(3)], ['Colors look shifted', 'for a short time after removal', sStart(4)], ['Aided eye night-blind', 'needs time to adapt after removal', sStart(4) + 2.5]];
+    cards.forEach(([h, s2, at], i) => { const a = reveal(at + 0.2, 0.5); const col = i % 2, row = Math.floor(i / 2); const x = i === 4 ? 360 : 60 + col * 600, y = 120 + row * 150; ctx.globalAlpha = a; panel(x, y, 560, 120); ctx.globalAlpha = 1; text(h, x + 28, y + 50, 24, '#eaffef', 800, 'left', a); text(s2, x + 28, y + 86, 17, '#9dbba2', 600, 'left', a);
+      if (i === 3 && a > 0) { ctx.globalAlpha = a; ctx.fillStyle = '#e8b7c8'; roundRect(x + 470, y + 30, 60, 60, 8); ctx.fill(); ctx.globalAlpha = 1; } });
+    tag('NORMALLY TEMPORARY', 640, 92 + 0, GREEN, reveal(sStart(5)), 18);
+  },
+
+  protect(t, d) {
+    mapBG();
+    panel(60, 110, 740, 450); text('Protect your eyes', 90, 152, 24, '#eaffef', 800);
+    checklist(90, 214, ['Take breaks · follow the rest plan', 'Keep the eyecup clean; clean it before sharing', 'Never look at a laser — NVDs do not protect your eyes', 'Report lasting eye pain, blurred vision, or headaches to medical'], [sStart(1) + 0.3, sStart(2) + 0.3, sStart(3) + 0.3, sStart(4) + 0.3], 20, 80, 640);
+    const la = reveal(sStart(3), 0.4);
+    if (la > 0) { ctx.globalAlpha = la; panel(860, 200, 360, 240, 'rgba(40,6,6,0.9)', 'rgba(255,77,77,0.6)'); ctx.fillStyle = RED; ctx.beginPath(); ctx.moveTo(1040, 250); ctx.lineTo(1100, 350); ctx.lineTo(980, 350); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1; text('!', 1040, 338, 60, '#1a0000', 900, 'center', la); text('LASER HAZARD', 1040, 400, 22, RED, 900, 'center', la); }
+  },
+
+  stow(t, d) {
+    mapBG();
+    const flip = smooth(sStart(0) + 0.3, sStart(0) + 1.8, t), out = smooth(sStart(1) + 0.5, sStart(1) + 2.2, t);
+    rig(400, 380, 1.8, { flip: out > 0 ? 1 : flip, devIn: 1 - out * 0.45, devFade: 1 - out, power: flip < 0.4, caps: out > 0.3, lanyard: 1 - out });
+    panel(760, 140, 480, 380); text('Stow / remove', 790, 182, 22, '#eaffef', 800);
+    checklist(790, 240, ['Flip up · turn off', 'Unlock from the mount', 'Lens caps on', 'Battery out for storage', 'Account for it · turn in per SOP'], [sStart(0) + 1.8, sStart(1) + 0.5, sStart(1) + 2.0, sStart(1) + 3.2, sStart(2) + 0.3], 20, 56, 400);
+  },
+
+  summary(t, d) {
+    mapBG();
+    const items = ['Inspect shroud and mount', 'Lock mount, pull test', 'Lock device, pull test', 'Lanyard on', 'Helmet tight + counterweight', 'Adjust: full circle, level', 'Diopter, then objective', 'Shake test', 'Never drive with a loose mount', 'Protect your eyes', 'Stow and account for it'];
+    panel(60, 80, 1160, 560); text('NVG MOUNTING', 90, 138, 36, GREEN, 900);
+    const s0 = sStart(1), span = sEnd(SC.sentences.length - 1) - s0;
+    items.forEach((s, i) => { const col = i < 6 ? 0 : 1, row = i < 6 ? i : i - 6; const x = 100 + col * 560, y = 200 + row * 70; const a = reveal(s0 + i * span / items.length, 0.35); if (a > 0) { ctx.globalAlpha = a; (i === 8 ? cross : check)(x + 8, y - 9, 30); ctx.globalAlpha = 1; } text(s, x + 40, y, 23, '#eaffef', 600, 'left', a); });
+  },
+
+  end(t, d) {
+    drawRoadWorld({ camZ: 7000 + t * 6 });
+    composeNVG({ gain: 1 - smooth(d - 3, d, t) });
+    ctx.globalAlpha = 0.75; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+    const a = reveal(0.3, 0.8) * (1 - smooth(d - 1.5, d, t));
+    text('Mount it right. Own the night.', 640, 280, 46, '#eaffef', 800, 'center', a);
+    const refs = ['AN/PVS-14 operator TM  ·  Helmet mount operator TM', 'TC 21-305-2  — Training Program for Night Vision Goggle Driving Operations', 'Unit SOP  ·  Report eye problems to medical'];
+    refs.forEach((s, i) => text(s, 640, 360 + i * 36, 20, '#c9e8cd', 500, 'center', a * reveal(1.0 + i * 0.4)));
+    text('Training aid only. Always verify against the current publications and your unit SOP.', 640, 520, 16, '#7f9a84', 500, 'center', a * reveal(2.5));
+  },
+};
+startPlayer();
+</script>
+</body>
+</html>
