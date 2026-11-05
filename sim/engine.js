@@ -1,7 +1,7 @@
 // Shared NVG simulation engine: world renderer, NVG compositor, drawing helpers, overlays, player.
 "use strict";
 const W = 1280, H = 720;
-const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const cv = document.getElementById('c'); let ctx = cv.getContext('2d');
 const world = document.createElement('canvas'); world.width = W; world.height = H;
 const wx = world.getContext('2d');
 const TL = window.TIMELINE;
@@ -90,12 +90,19 @@ function drawRoadWorld(o) {
     } else if (p.type === 'stake') {
       g.fillStyle = gray(0.55 * il); g.fillRect(b.x - 0.05 * s, b.y - 1.2 * s, Math.max(1, 0.1 * s), 1.2 * s);
       g.fillStyle = gray(0.95); g.fillRect(b.x - 0.06 * s, b.y - 1.15 * s, Math.max(2, 0.12 * s), Math.max(2, 0.12 * s));
-    } else if (p.type === 'truck') {           // rear of a vehicle
-      const w = 2.5 * s, h = 3.2 * s;
-      g.fillStyle = gray(0.22 * il + 0.05); g.fillRect(b.x - w / 2, b.y - h, w, h * 0.85);
-      g.fillStyle = gray(0.08); g.fillRect(b.x - w / 2, b.y - h * 0.28, w, h * 0.13);
-      g.fillStyle = gray(0.05); for (const dx of [-0.9, 0.9]) g.fillRect(b.x + dx * s - 0.3 * s, b.y - 1.0 * s, 0.6 * s, 1.0 * s);
-      g.fillStyle = gray(1); for (const dx of [-1.05, 1.05]) { g.beginPath(); g.arc(b.x + dx * s, b.y - 1.4 * s, Math.max(1.5, 0.09 * s), 0, 7); g.fill(); }
+    } else if (p.type === 'truck') {           // M1075A1 seen from behind; each part projected at its own depth
+      const L = 0.22 * il + 0.05;
+      const part = (dz, x0, x1, h0, h1, l) => { const q = proj(camZ, laneX, yaw, p.x, z + dz, 0); g.fillStyle = gray(l); g.fillRect(q.x + x0 * q.s, q.y - h1 * q.s, (x1 - x0) * q.s, (h1 - h0) * q.s); };
+      const back = PLS.LF;
+      part(back - PLS.cab[1], -PLS.W / 2, PLS.W / 2, 1.0, PLS.cabH, L * 0.85);                 // cab rear wall
+      part(back - PLS.equip[1], -1.12, 1.12, 1.45, PLS.equipH, L);                            // equipment module
+      part(back - PLS.spare[1], -0.66, 0.66, PLS.cabH, PLS.cabH + 0.43, 0.05);                // spare tyre on top
+      part(back - PLS.hook[1], -0.45, 0.45, 1.45, PLS.H - 0.15, L * 1.1);                     // hook arm
+      for (const sg of [-1, 1]) part(back - PLS.axles[4], sg * PLS.track / 2 - PLS.tireW / 2, sg * PLS.track / 2 + PLS.tireW / 2, 0, PLS.tireR * 2, 0.04);
+      part(back - PLS.L + 0.1, -1.15, 1.15, 0.7, 1.2, 0.08);                                   // rear bumper / frame
+      if (p.load !== 'none') part(0.3, -1.1, 1.1, PLS.deckH, PLS.deckH + 1.2, L * 1.15);       // palletized load
+      part(0, -1.22, 1.22, PLS.deckH - 0.3, PLS.deckH, L * 1.35);                             // flatrack rear sill
+      g.fillStyle = gray(1); for (const dx of [-1.05, 1.05]) { const q = proj(camZ, laneX, yaw, p.x + dx, z + back - PLS.L + 0.05, 1.05); g.beginPath(); g.arc(q.x, q.y, Math.max(1.5, 0.09 * q.s), 0, 7); g.fill(); }
     } else if (p.type === 'person') {
       const h = 1.8 * s; g.fillStyle = gray(0.6 * il + 0.15);
       g.beginPath(); g.arc(b.x, b.y - h * 0.92, h * 0.08, 0, 7); g.fill(); g.fillRect(b.x - h * 0.09, b.y - h * 0.84, h * 0.18, h * 0.45);
@@ -155,14 +162,23 @@ function drawGuide(g, x, y, s, p, il) {
   }
   if (p.aimAt) p._aim = { x: (p._hands[1].x), y: p._hands[1].y, s };
 }
-// side of the PLS seen from the left mirror (truck runs from the camera toward +z, flank at x = +0.7 m)
+// Left side of the PLS seen in the driver's left mirror (camera at the mirror, looking rearward along the truck).
+// Body side at x = +0.7 m from the camera; z = distance behind the mirror = u - PLS_MIRROR.u.
 function drawFlank(g, il) {
-  const pts = [[0.7, 1.6, 0.9], [0.7, 11.2, 0.9], [0.7, 11.2, 2.9], [0.7, 1.6, 2.9]].map(([x, z, y]) => projL(x, z, y));
-  g.fillStyle = gray(0.13 * il + 0.03); g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y)); g.closePath(); g.fill();
-  g.strokeStyle = gray(0.05); g.lineWidth = 2;
-  for (let z = 2.5; z < 11.2; z += 1.4) { const a = projL(0.7, z, 0.9), b = projL(0.7, z, 2.9); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); }
-  g.fillStyle = gray(0.03);
-  for (const z of [7.4, 8.8, 10.2]) { const c = projL(0.85, z, 0.55); g.beginPath(); g.ellipse(c.x, c.y, 0.25 * c.s, 0.55 * c.s, 0, 0, 7); g.fill(); }
+  const z0 = PLS_MIRROR.u;
+  const side = (x, u0, u1, h0, h1, l) => { const q = [[u0, h0], [u1, h0], [u1, h1], [u0, h1]].map(([u, h]) => projL(x, Math.max(0.6, u - z0), h)); g.fillStyle = gray(l); g.beginPath(); q.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)); g.closePath(); g.fill(); };
+  const L = 0.13 * il + 0.03;
+  // far to near
+  for (const ax of PLS.axles.slice(1).reverse()) { const c = projL(0.78, ax - z0, PLS.tireR); g.fillStyle = gray(0.03); g.beginPath(); g.ellipse(c.x, c.y, 0.2 * c.s, PLS.tireR * c.s, 0, 0, 7); g.fill(); }
+  side(0.74, PLS.rack[0], PLS.rack[1], PLS.deckH - 0.3, PLS.deckH, L * 1.3);                       // flatrack side rail
+  for (const [u0, u1, h] of [[9.6, 11.1, 1.25], [7.6, 9.4, 1.1], [5.6, 7.4, 1.25]]) side(0.9, u0, u1, PLS.deckH, PLS.deckH + h, L * 1.1);   // palletized load
+  side(0.95, 1.6, PLS.L, PLS.frame[0], PLS.frame[1], L * 0.6);                                     // frame rail
+  side(1.96, PLS.hook[0], PLS.hook[1], 1.45, PLS.H - 0.15, L * 1.2);                               // hook arm (centre line)
+  side(0.9, PLS.spare[0], PLS.spare[1], PLS.cabH, PLS.cabH + 0.43, 0.04);                          // spare tyre on top
+  side(0.85, PLS.equip[0], PLS.equip[1], 1.45, PLS.equipH, L);                                     // equipment module
+  side(0.83, PLS.engine[0], PLS.engine[1], 1.45, PLS.engineH, L * 0.9);                            // engine module
+  g.strokeStyle = gray(0.03); g.lineWidth = 2;
+  for (let u = PLS.engine[0] + 0.15; u < PLS.engine[1]; u += 0.15) { const a = projL(0.83, u - z0, 1.6), b = projL(0.83, u - z0, 2.6); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); }
   // mirror housing edge
   g.fillStyle = gray(0.02); g.fillRect(W - 60, 0, 60, H); g.fillRect(0, H - 40, W, 40);
 }
@@ -255,34 +271,114 @@ function mapBG() {
   for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y + .5); ctx.lineTo(W, y + .5); ctx.stroke(); }
 }
 
-// M1075A1 top view, front pointing +x. (x,y) = front bumper centre. ppm = pixels per metre.
-const PLS_L = 10.8, PLS_W = 2.44;
+// ---------- M1075A1 PLS geometry (Oshkosh PLS A1 M1075A1 spec sheet, 2015) ----------
+// Metres from the front bumper. Length 10.795 m (11.303 m with flatrack), width 2.517 m, height 3.277 m,
+// wheelbase 5.715 m, track 1.93 m, 16.00R20 tyres, 10x10, steering axles 1, 2 and 5.
+// Axle and component positions measured from the spec-sheet side-view drawing (scaled to the 425 in length).
+const PLS = {
+  L: 10.795, LF: 11.303, W: 2.517, H: 3.277, track: 1.93, tireR: 0.675, tireW: 0.42,
+  axles: [1.99, 3.47, 6.91, 8.42, 9.97],
+  cab: [0, 1.74], cabH: 2.67, engine: [1.85, 2.9], engineH: 2.72, equip: [2.9, 4.1], equipH: 2.55,
+  spare: [2.7, 4.0], hook: [4.8, 5.15], rack: [5.25, 11.303], deckH: 1.742, frame: [1.0, 1.45],
+};
+const PLS_L = PLS.LF, PLS_W = PLS.W;
+
+// Top view, front pointing +x. (x,y) = front bumper centre. ppm = pixels per metre.
+// o: { ang, ir, label, noRack, rackShift (m, flatrack sliding rearward), body, deck }
 function plsTop(x, y, ppm, o = {}) {
   ctx.save(); ctx.translate(x, y); ctx.rotate(o.ang || 0);
-  const L = PLS_L * ppm, Wd = PLS_W * ppm;
-  ctx.fillStyle = '#0d0d0d';
-  for (const ax of [0.95, 2.45, 6.6, 8.0, 9.4]) for (const s of [-1, 1]) ctx.fillRect(-ax * ppm - 0.6 * ppm, s * (Wd / 2) - (s > 0 ? 0.55 * ppm : -0.05 * ppm) - 0.25 * ppm, 1.2 * ppm, 0.55 * ppm);
-  ctx.fillStyle = o.body || '#5f6b45'; ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.lineWidth = 1.5;
-  roundRect(-2.7 * ppm, -Wd / 2, 2.7 * ppm, Wd, 0.3 * ppm); ctx.fill(); ctx.stroke();                    // cab
-  ctx.fillStyle = o.deck || '#4a5537'; ctx.fillRect(-L, -Wd / 2 + 0.05 * ppm, L - 3.1 * ppm, Wd - 0.1 * ppm); // flatrack
-  ctx.strokeStyle = 'rgba(0,0,0,0.35)'; for (let i = 1; i < 6; i++) { const xx = -L + i * (L - 3.1 * ppm) / 6; ctx.beginPath(); ctx.moveTo(xx, -Wd / 2); ctx.lineTo(xx, Wd / 2); ctx.stroke(); }
-  ctx.fillStyle = '#3b442c'; ctx.fillRect(-3.1 * ppm, -0.5 * ppm, 0.4 * ppm, ppm);                         // LHS hook arm
-  ctx.fillStyle = 'rgba(160,220,255,0.35)'; ctx.fillRect(-0.55 * ppm, -Wd / 2 + 0.2 * ppm, 0.35 * ppm, Wd - 0.4 * ppm); // windshield
-  if (o.ir) { ctx.fillStyle = '#eaffef'; ctx.shadowColor = '#9dffb0'; ctx.shadowBlur = 12; for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(-L + 0.1 * ppm, s * (Wd / 2 - 0.2 * ppm), Math.max(2, 0.18 * ppm), 0, 7); ctx.fill(); } ctx.shadowBlur = 0; }
-  if (o.label) { ctx.rotate(-(o.ang || 0)); text(o.label, -L / 2, -Wd / 2 - 10, 16, '#b9d9be', 600, 'center'); }
+  const m = v => v * ppm, hw = PLS.W / 2, tw = PLS.track / 2;
+  // tyres (dual-width singles, all ten)
+  ctx.fillStyle = '#0b0b0b';
+  for (const ax of PLS.axles) for (const sg of [-1, 1]) roundRect(-m(ax + PLS.tireR), sg * m(tw) - m(PLS.tireW / 2), m(PLS.tireR * 2), m(PLS.tireW), m(0.12)), ctx.fill();
+  // frame rails
+  ctx.fillStyle = '#272c20'; ctx.fillRect(-m(PLS.L), -m(0.5), m(PLS.L - 1.6), m(1.0));
+  // flatrack: bed, side rails, slats, front A-frame
+  if (!o.noRack) {
+    const r0 = PLS.rack[0] + (o.rackShift || 0), r1 = PLS.rack[1] + (o.rackShift || 0), rw = 2.44;
+    ctx.fillStyle = o.deck || '#4f5a3a'; ctx.fillRect(-m(r1), -m(rw / 2), m(r1 - r0), m(rw));
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 1.5;
+    for (let u = r0 + 0.6; u < r1; u += 0.6) { ctx.beginPath(); ctx.moveTo(-m(u), -m(rw / 2)); ctx.lineTo(-m(u), m(rw / 2)); ctx.stroke(); }
+    ctx.fillStyle = '#3f482e'; ctx.fillRect(-m(r1), -m(rw / 2), m(r1 - r0), m(0.12)); ctx.fillRect(-m(r1), m(rw / 2 - 0.12), m(r1 - r0), m(0.12));
+    ctx.fillStyle = '#353d27'; ctx.beginPath(); ctx.moveTo(-m(r0), -m(rw / 2)); ctx.lineTo(-m(r0 + 0.9), 0); ctx.lineTo(-m(r0), m(rw / 2)); ctx.closePath(); ctx.fill();
+  }
+  // LHS hook arm
+  ctx.fillStyle = '#3b442c'; ctx.fillRect(-m(PLS.hook[1]), -m(0.45), m(PLS.hook[1] - PLS.hook[0]), m(0.9));
+  ctx.fillStyle = '#1e2318'; ctx.fillRect(-m(PLS.hook[0] + 0.05), -m(0.12), m(0.12), m(0.24));
+  // equipment module with the spare tyre carried flat on top
+  ctx.fillStyle = '#56603f'; ctx.fillRect(-m(PLS.equip[1]), -m(1.12), m(PLS.equip[1] - PLS.equip[0]), m(2.24));
+  ctx.fillStyle = '#121212'; ctx.beginPath(); ctx.arc(-m((PLS.spare[0] + PLS.spare[1]) / 2), 0, m(0.66), 0, 7); ctx.fill();
+  ctx.fillStyle = '#3a3a3a'; ctx.beginPath(); ctx.arc(-m((PLS.spare[0] + PLS.spare[1]) / 2), 0, m(0.3), 0, 7); ctx.fill();
+  // engine / radiator module
+  ctx.fillStyle = '#5b6643'; ctx.fillRect(-m(PLS.engine[1]), -m(1.15), m(PLS.engine[1] - PLS.engine[0]), m(2.3));
+  ctx.strokeStyle = 'rgba(0,0,0,0.3)'; for (let u = PLS.engine[0] + 0.15; u < PLS.engine[1]; u += 0.15) { ctx.beginPath(); ctx.moveTo(-m(u), -m(0.8)); ctx.lineTo(-m(u), m(0.8)); ctx.stroke(); }
+  // cab (full width, flat sloped nose), windshield, roof hatch, west-coast mirrors
+  ctx.fillStyle = o.body || '#66714b'; ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.lineWidth = 1.5;
+  roundRect(-m(PLS.cab[1]), -m(hw), m(PLS.cab[1]), m(PLS.W), m(0.18)); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(160,220,255,0.35)'; ctx.fillRect(-m(0.5), -m(hw - 0.15), m(0.3), m(PLS.W - 0.3));
+  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(-m(1.2), -m(0.3), m(0.5), m(0.6));
+  ctx.fillStyle = '#1e2318'; for (const sg of [-1, 1]) ctx.fillRect(-m(0.55), sg * m(hw + 0.08) - (sg < 0 ? m(0.22) : 0), m(0.18), m(0.22));
+  if (o.ir) { ctx.fillStyle = '#eaffef'; ctx.shadowColor = '#9dffb0'; ctx.shadowBlur = 12; for (const sg of [-1, 1]) { ctx.beginPath(); ctx.arc(-m(PLS.L) + 2, sg * m(hw - 0.2), Math.max(2, m(0.18)), 0, 7); ctx.fill(); } ctx.shadowBlur = 0; }
+  if (o.label) { ctx.rotate(-(o.ang || 0)); text(o.label, -m(PLS.LF) / 2, -m(hw) - 10, 16, '#b9d9be', 600, 'center'); }
   ctx.restore();
 }
-// side view silhouette (for title)
-function plsSide(x, y, s, col) {
-  ctx.save(); ctx.translate(x, y); ctx.fillStyle = col;
-  ctx.beginPath(); ctx.moveTo(0, -1.0 * s); ctx.lineTo(0, -3.0 * s); ctx.lineTo(0.3 * s, -3.25 * s); ctx.lineTo(2.6 * s, -3.25 * s); ctx.lineTo(2.7 * s, -1.0 * s); ctx.closePath(); ctx.fill();
-  ctx.fillRect(2.7 * s, -1.6 * s, 8.1 * s, 0.6 * s);
-  ctx.fillRect(3.0 * s, -3.6 * s, 6.6 * s, 2.0 * s);                     // container on flatrack
-  ctx.fillRect(2.75 * s, -3.0 * s, 0.35 * s, 1.4 * s);                    // hook arm
-  ctx.fillStyle = '#000'; for (const ax of [0.95, 2.45, 6.6, 8.0, 9.4]) { ctx.beginPath(); ctx.arc(ax * s, -0.6 * s, 0.6 * s, 0, 7); ctx.fill(); }
-  ctx.fillStyle = col; for (const ax of [0.95, 2.45, 6.6, 8.0, 9.4]) { ctx.beginPath(); ctx.arc(ax * s, -0.6 * s, 0.25 * s, 0, 7); ctx.fill(); }
+// mirror position (driver's side = -y in top view) relative to the front bumper, metres
+const PLS_MIRROR = { u: 0.46, v: -(PLS.W / 2 + 0.2) };
+
+// Side view, front at the left. (x,y) = front bumper at ground level; s = pixels per metre.
+// col = silhouette colour; o.load: 'pallets' | 'container' | 'none'
+const _sideCv = document.createElement('canvas'); _sideCv.width = W; _sideCv.height = H;
+function plsSide(x, y, s, col, o = {}) {
+  // draw opaque on an offscreen canvas, then composite once so overlapping parts don't double up
+  const m = /rgba\(([^,]+),([^,]+),([^,]+),\s*([\d.]+)\)/.exec(col);
+  if (m && !o._inner) {
+    const sc = _sideCv.getContext('2d'); sc.clearRect(0, 0, W, H);
+    const saved = ctx; ctx = sc; try { plsSide(x, y, s, `rgb(${m[1]},${m[2]},${m[3]})`, { ...o, _inner: true }); } finally { ctx = saved; }
+    ctx.save(); ctx.globalAlpha *= +m[4]; ctx.drawImage(_sideCv, 0, 0); ctx.restore(); return;
+  }
+  const P = (u, h) => [x + u * s, y - h * s];
+  const poly = (pts, fill) => { ctx.fillStyle = fill; ctx.beginPath(); pts.forEach(([u, h], i) => { const [a, b] = P(u, h); i ? ctx.lineTo(a, b) : ctx.moveTo(a, b); }); ctx.closePath(); ctx.fill(); };
+  const rect = (u0, u1, h0, h1, fill) => poly([[u0, h0], [u1, h0], [u1, h1], [u0, h1]], fill);
+  const dark = 'rgba(0,0,0,0.55)', load = o.load || 'pallets';
+  ctx.save();
+  // load on the flatrack
+  if (load === 'container') rect(PLS.rack[0] + 0.1, PLS.rack[1], PLS.deckH, PLS.deckH + 2.44, col);
+  if (load === 'pallets') for (const [u0, u1, h] of [[5.6, 7.4, 1.25], [7.6, 9.4, 1.1], [9.6, 11.1, 1.25]]) rect(u0, u1, PLS.deckH, PLS.deckH + h, col);
+  if (load === 'pallets') for (const [u0, u1, h] of [[5.6, 7.4, 1.25], [7.6, 9.4, 1.1], [9.6, 11.1, 1.25]]) rect(u0 + 0.05, u1 - 0.05, PLS.deckH + h * 0.48, PLS.deckH + h * 0.52, dark);
+  // flatrack bed + front A-frame
+  rect(PLS.rack[0], PLS.rack[1], PLS.deckH - 0.3, PLS.deckH, col);
+  poly([[PLS.rack[0], PLS.deckH], [PLS.rack[0] + 0.25, PLS.deckH], [PLS.rack[0] + 0.12, 2.75], [PLS.rack[0] - 0.05, 2.75]], col);
+  // frame rails and rear bumper
+  rect(1.6, PLS.L, PLS.frame[0], PLS.frame[1], col);
+  rect(PLS.L - 0.25, PLS.L, 0.7, PLS.frame[1], col);
+  // hook arm with the hook at the top
+  rect(PLS.hook[0], PLS.hook[1], 1.45, PLS.H - 0.15, col);
+  ctx.strokeStyle = col; ctx.lineWidth = Math.max(2, 0.1 * s); ctx.beginPath(); const [hx, hy] = P(PLS.hook[0] + 0.05, PLS.H - 0.2); ctx.arc(hx, hy, 0.16 * s, Math.PI * 0.1, Math.PI * 1.3, true); ctx.stroke();
+  // equipment module, spare tyre on top, engine module
+  rect(PLS.equip[0], PLS.equip[1], 1.45, PLS.equipH, col);
+  { const [a0, b0] = P(PLS.spare[0], PLS.cabH + 0.43), r = 0.215 * s; ctx.fillStyle = col; roundRect(a0, b0, (PLS.spare[1] - PLS.spare[0]) * s, 0.43 * s, r); ctx.fill();
+    ctx.fillStyle = dark; for (let u = PLS.spare[0] + 0.2; u < PLS.spare[1] - 0.15; u += 0.13) { const [a, b] = P(u, PLS.cabH + 0.38); ctx.fillRect(a, b, 0.045 * s, 0.33 * s); } }
+  rect(PLS.engine[0], PLS.engine[1], 1.45, PLS.engineH, col);
+  for (let h = 1.75; h < 2.6; h += 0.12) rect(PLS.engine[0] + 0.12, PLS.engine[1] - 0.12, h, h + 0.04, dark);
+  // cab: sloped nose, flat roof, step-up over the first axle
+  rect(4.4, 6.2, 0.55, 1.25, col); rect(4.5, 6.1, 0.85, 0.9, dark);                    // fuel tank / battery box between axle groups
+  poly([[0.08, 0.75], [0.0, 1.55], [0.1, 1.9], [0.44, PLS.cabH - 0.04], [0.56, PLS.cabH], [PLS.cab[1], PLS.cabH], [PLS.cab[1], 1.42], [1.32, 1.42], [1.15, 0.75]], col);
+  poly([[0.16, 1.95], [0.42, 2.52], [0.5, 2.52], [0.27, 1.95]], dark);          // windshield edge
+  rect(0.55, 1.28, 2.0, 2.5, dark);                                                  // door window
+  rect(0.55, 1.3, 1.05, 1.9, 'rgba(0,0,0,0.18)');                                    // door
+  rect(-0.1, 0.18, 0.55, 0.95, col); rect(0.82, 1.1, 0.42, 0.75, col);                 // front bumper, cab step
+  // tyres
+  for (const ax of PLS.axles) {
+    const [cx, cy] = P(ax, PLS.tireR);
+    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(cx, cy, PLS.tireR * s, 0, 7); ctx.fill();
+    ctx.strokeStyle = col; ctx.lineWidth = Math.max(1, 0.05 * s); ctx.beginPath(); ctx.arc(cx, cy, PLS.tireR * s * 0.93, 0, 7); ctx.stroke();
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(cx, cy, 0.3 * s, 0, 7); ctx.fill();
+    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(cx, cy, 0.09 * s, 0, 7); ctx.fill();
+  }
   ctx.restore();
 }
+
+
 
 // ---------- overlays ----------
 function overlays(sc, lt) {
