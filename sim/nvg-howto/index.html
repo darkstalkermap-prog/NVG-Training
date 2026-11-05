@@ -116,7 +116,7 @@ const SCENES = {
     ctx.globalAlpha = a; rig(1000, 310, 1.05, { power: true }); ctx.globalAlpha = 1;
     text('HOW-TO', 90, 240, 26, '#7dff8f', 700, 'left', a);
     text('Mounting Night Vision', 86, 316, 58, '#eaffef', 800, 'left', a);
-    text('AN/PVS-14  ·  Mount check  ·  Your eyes  ·  Benefits', 90, 366, 26, '#c9e8cd', 500, 'left', a);
+    text('AN/PVS-14  ·  Mount check  ·  Your eyes  ·  Principles  ·  Quiz', 90, 366, 26, '#c9e8cd', 500, 'left', a);
     text('For drivers, ground guides, and crews', 90, 402, 20, '#88a98d', 500, 'left', a);
   },
 
@@ -252,9 +252,157 @@ const SCENES = {
     checklist(790, 240, ['Flip up · turn off', 'Unlock from the mount', 'Lens caps on', 'Battery out for storage', 'Account for it · turn in per SOP'], [sStart(0) + 1.8, sStart(1) + 0.5, sStart(1) + 2.0, sStart(1) + 3.2, sStart(2) + 0.3], 20, 56, 400);
   },
 
+  // ---------- principles of night vision ----------
+  p_vision(t, d) {
+    mapBG();
+    const cards = [['Depth perception', 'judging height and distance', sStart(2) + 0.3], ['Night vision techniques', 'efficiency in night operations', sStart(2) + 2.6], ['Visual acuity', 'identifying terrain features and obstacles', sStart(2) + 5.0]];
+    text('Vision: your most important sense while driving', 640, 170, 28, '#eaffef', 800, 'center', reveal(sStart(1)));
+    cards.forEach(([h, s2, at], i) => { const a = reveal(at, 0.5), x = 70 + i * 390; ctx.globalAlpha = a; panel(x, 240, 360, 220); ctx.globalAlpha = 1; text(h, x + 180, 330, 27, GREEN, 800, 'center', a); wrap(s2, 300, 19, 500).forEach((l, k) => text(l, x + 180, 380 + k * 26, 19, '#c9e8cd', 500, 'center', a)); });
+  },
+
+  p_eye(t, d) {
+    mapBG();
+    const ex = 560, ey = 360, R = 170;
+    // eyeball
+    ctx.fillStyle = '#1c2a20'; ctx.beginPath(); ctx.arc(ex, ey, R, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#4b6a52'; ctx.lineWidth = 4; ctx.stroke();
+    // retina (back = left)
+    const hlR = reveal(sStart(3)) * (1 - reveal(sStart(4) + 1.5));
+    ctx.strokeStyle = hlR ? `rgba(255,140,120,${0.6 + 0.4 * hlR})` : '#8c4a44'; ctx.lineWidth = 9; ctx.beginPath(); ctx.arc(ex, ey, R - 8, Math.PI * 0.62, Math.PI * 1.38); ctx.stroke();
+    // optic nerve
+    ctx.fillStyle = '#5a4a3a'; ctx.beginPath(); ctx.moveTo(ex - R + 10, ey - 22); ctx.lineTo(ex - R - 120, ey - 30); ctx.lineTo(ex - R - 120, ey + 30); ctx.lineTo(ex - R + 10, ey + 22); ctx.fill();
+    // cornea (front bulge, right)
+    ctx.strokeStyle = `rgba(190,230,255,${0.5 + 0.5 * reveal(sStart(1)) * (1 - reveal(sStart(2)))})`; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(ex + R - 40, ey, 75, -1.0, 1.0); ctx.stroke();
+    // iris (two blades) + pupil gap
+    ctx.fillStyle = '#4c7ab0'; ctx.fillRect(ex + R - 52, ey - 78, 12, 52); ctx.fillRect(ex + R - 52, ey + 26, 12, 52);
+    // lens
+    ctx.fillStyle = 'rgba(200,230,210,0.55)'; ctx.beginPath(); ctx.ellipse(ex + R - 80, ey, 22, 52, 0, 0, 7); ctx.fill();
+    // light ray: object (upright arrow) -> pupil -> lens -> retina (inverted)
+    const k = smooth(sStart(2), sStart(3) + 3, t);
+    ctx.strokeStyle = AMBER; ctx.lineWidth = 3; ctx.setLineDash([8, 6]);
+    const src = [[1180, ey - 80], [1180, ey + 80]], hit = [[ex - R + 12, ey + 60], [ex - R + 12, ey - 60]];
+    for (let i = 0; i < 2; i++) { ctx.beginPath(); ctx.moveTo(src[i][0], src[i][1]); const mx = ex + R - 80, my = ey; const p1 = Math.min(1, k * 2), p2 = clamp(k * 2 - 1, 0, 1); ctx.lineTo(lerp(src[i][0], mx, p1), lerp(src[i][1], my, p1)); if (p2 > 0) ctx.lineTo(lerp(mx, hit[i][0], p2), lerp(my, hit[i][1], p2)); ctx.stroke(); }
+    ctx.setLineDash([]);
+    ctx.fillStyle = AMBER; ctx.fillRect(1176, ey - 80, 8, 160); ctx.beginPath(); ctx.moveTo(1160, ey - 70); ctx.lineTo(1180, ey - 100); ctx.lineTo(1200, ey - 70); ctx.fill();
+    if (k > 0.95) { ctx.fillStyle = 'rgba(255,191,60,0.9)'; ctx.fillRect(ex - R + 20, ey - 60, 6, 120); ctx.beginPath(); ctx.moveTo(ex - R + 13, ey + 52); ctx.lineTo(ex - R + 23, ey + 72); ctx.lineTo(ex - R + 33, ey + 52); ctx.fill(); }
+    // labels
+    label('Cornea — clear, protective front', 900, 190, ex + R - 2, ey - 50, reveal(sStart(1) + 0.3));
+    label('Pupil — where light enters', 960, 560 - 40, ex + R - 46, ey, reveal(sStart(2) + 0.2));
+    label('Iris — colored part, controls light', 820, 120, ex + R - 46, ey - 70, reveal(sStart(2) + 2.0));
+    label('Lens — focuses the light', 760, 600 - 30, ex + R - 80, ey + 40, reveal(sStart(3) + 0.2));
+    label('Retina — image formed here', 400, 170, ex - R + 30, ey - 90, reveal(sStart(3) + 1.6));
+    label('Brain turns it right way up', 330, 470, ex - R - 100, ey + 20, reveal(sStart(4) + 0.5));
+  },
+
+  p_types(t, d) {
+    mapBG();
+    // eye chart
+    const a0 = reveal(sStart(0) + 0.3);
+    ctx.globalAlpha = a0; panel(70, 130, 300, 400, '#e9e4d2', '#9c9478'); ctx.globalAlpha = 1;
+    ['E', 'F P', 'T O Z', 'L P E D', 'P E C F D'].forEach((r, i) => text(r, 220, 200 + i * 62, 54 - i * 9, '#2b2a22', 800, 'center', a0));
+    text('Visual acuity: each eye, standard chart', 220, 560, 16, '#c9e8cd', 700, 'center', a0);
+    const types = [['PHOTOPIC', 'daylight', '#ffd76a', sStart(1)], ['MESOPIC', 'dawn · dusk · mid-light', '#c9a6ff', sStart(3)], ['SCOTOPIC', 'darkness', '#8fb7ff', sStart(2)]];
+    types.forEach(([h, s2, col, at], i) => { const a = reveal(at + 0.2, 0.5), x = 420 + i * 270; ctx.globalAlpha = a; panel(x, 200, 250, 260); ctx.globalAlpha = 1;
+      ctx.globalAlpha = a; ctx.fillStyle = col; ctx.beginPath(); if (i === 0) ctx.arc(x + 125, 280, 34, 0, 7); else if (i === 1) { ctx.arc(x + 125, 290, 34, Math.PI, 0); ctx.fillRect(x + 80, 290, 90, 4); } else { ctx.arc(x + 125, 280, 34, 0, 7); } ctx.fill(); if (i === 2) { ctx.fillStyle = '#0f1a12'; ctx.beginPath(); ctx.arc(x + 140, 270, 30, 0, 7); ctx.fill(); } ctx.globalAlpha = 1;
+      text(h, x + 125, 370, 26, col, 900, 'center', a); text(s2, x + 125, 410, 17, '#c9e8cd', 600, 'center', a); });
+  },
+
+  p_adapt(t, d) {
+    mapBG();
+    const gx = 90, gy = 430, gw = 520, gh = 260, Tm = 50;
+    ctx.strokeStyle = '#3c7a4b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(gx, gy - gh); ctx.lineTo(gx, gy); ctx.lineTo(gx + gw, gy); ctx.stroke();
+    for (let m = 0; m <= 50; m += 10) text(m + ' min', gx + m / Tm * gw, gy + 22, 13, '#9dbba2', 600, 'center');
+    ctx.fillStyle = 'rgba(93,255,122,0.12)'; ctx.fillRect(gx + 30 / Tm * gw, gy - gh, 15 / Tm * gw, gh);
+    text('30–45 min: maximum', gx + 37.5 / Tm * gw, gy - gh - 10, 15, GREEN, 800, 'center');
+    const cur = smooth(0.3, sEnd(0), t) * Tm; ctx.strokeStyle = GREEN; ctx.lineWidth = 4; ctx.beginPath();
+    for (let m = 0; m <= cur; m += 0.25) { const x = gx + m / Tm * gw, y = gy - (1 - Math.exp(-m / 11)) * gh * 0.97; m ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
+    text('Dark adaptation', gx, gy - gh - 10, 16, '#c9e8cd', 700);
+    // flash drill
+    const fa = reveal(sStart(1), 0.4); if (fa <= 0) return;
+    ctx.globalAlpha = fa; panel(680, 130, 540, 420); ctx.globalAlpha = 1;
+    text('Flash expected?', 950, 172, 22, '#eaffef', 800, 'center', fa);
+    text('Known direction → turn the vehicle away', 950, 212, 18, '#c9e8cd', 600, 'center', fa);
+    const ub = reveal(sStart(2), 0.4);
+    text('Unknown direction → close one eye', 950, 250, 18, AMBER, 700, 'center', ub);
+    const flash = t > sStart(2) + 1.2 && t < sStart(2) + 2.2;
+    if (flash) { ctx.fillStyle = 'rgba(255,255,230,0.35)'; ctx.fillRect(680, 130, 540, 420); }
+    const eye = (x, closed, lab, col) => { ctx.fillStyle = '#d8e8da'; ctx.beginPath(); ctx.ellipse(x, 380, 60, closed ? 6 : 34, 0, 0, 7); ctx.fill(); if (!closed) { ctx.fillStyle = '#2f5a3a'; ctx.beginPath(); ctx.arc(x, 380, 20, 0, 7); ctx.fill(); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(x, 380, flash ? 4 : 11, 0, 7); ctx.fill(); } text(lab, x, 460, 16, col, 800, 'center', ub); };
+    if (ub > 0) { ctx.globalAlpha = ub; eye(840, false, flash ? 'dazzled' : 'open', flash ? RED : '#c9e8cd'); eye(1060, t < sStart(3), t < sStart(3) ? 'closed — protected' : 'opens: night vision kept', GREEN); ctx.globalAlpha = 1; }
+  },
+
+  p_robbers(t, d) {
+    mapBG();
+    const cards = [['Night myopia', 'blurred vision at night — special lenses CAN be prescribed', sStart(0) + 0.2], ['Night driving', 'more tiring and stressful than day driving', sStart(1) + 0.2], ['Self-imposed stress', 'smoking alone: about 20% less night vision', sStart(2) + 0.2]];
+    cards.forEach(([h, s2, at], i) => { const a = reveal(at, 0.5), x = 70 + i * 390; ctx.globalAlpha = a; panel(x, 180, 360, 300); ctx.globalAlpha = 1; text(h, x + 180, 260, 27, i === 2 ? AMBER : '#eaffef', 800, 'center', a); wrap(s2, 300, 19, 500).forEach((l, k) => text(l, x + 180, 320 + k * 26, 19, '#c9e8cd', 500, 'center', a)); });
+    const sa = reveal(sStart(3), 0.4); if (sa > 0) { text('−20%', 70 + 2 * 390 + 180, 450, 44, RED, 900, 'center', sa); }
+  },
+
+  p_scan(t, d) {
+    const s1 = sStart(1), yaw = t < s1 ? 0.5 * Math.sin((t - 0.5) * 0.9) * smooth(0.5, 1.2, t) : 0;
+    drawRoadWorld({ camZ: 7300 + t * 3, yaw, objects: [{ type: 'person', z: 7300 + 3 * 6 + 20, x: 7 }, { type: 'truck', z: 7300 + 60, x: -8 }] });
+    composeNVG({});
+    tag('SLOW, REGULAR: RIGHT ↔ LEFT', 640, 92, GREEN, reveal(0.5) * (1 - reveal(s1, 0.3)), 20);
+    const a = reveal(s1 + 0.2, 0.5); if (a > 0) { ctx.globalAlpha = a * 0.85; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+      // branch-to-branch
+      ctx.strokeStyle = '#6b5a3a'; ctx.lineWidth = 14; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(250, 300); ctx.lineTo(560, 330); ctx.moveTo(720, 280); ctx.lineTo(1040, 250); ctx.stroke();
+      const k = smooth(s1 + 1.5, sStart(2) + 2.5, t), x = lerp(520, 760, k), y = 330 - Math.sin(k * Math.PI) * 90 + 20;
+      ctx.fillStyle = '#c9a87a'; ctx.beginPath(); ctx.arc(x, y + 10, 18, 0, 7); ctx.fill(); ctx.strokeStyle = '#c9a87a'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(lerp(x, 740, 0.5), y - 40); ctx.stroke();
+      text('Depth perception: knowing exactly where things are in space', 640, 470, 24, '#eaffef', 800, 'center', a); }
+  },
+
+  p_light(t, d) {
+    const camZ = 7600 + t * 5;
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    drawRoadWorld({ camZ, illum: 1 });
+    composeNVG({ cx: 330, cy: 330, r: 230, noise: 0.12 });
+    const bad = reveal(sStart(1), 0.6);
+    drawRoadWorld({ camZ, illum: lerp(1, 0.4, bad), fog: bad > 0.5 ? 90 : 0 });
+    composeNVG({ cx: 950, cy: 330, r: 230, noise: lerp(0.12, 0.4, bad), blur: 0.8 * bad });
+    ctx.fillStyle = '#f4f1d0'; ctx.beginPath(); ctx.arc(520, 130, 26, 0, 7); ctx.fill();
+    text('MOON: greatest ambient light', 330, 600, 19, '#9dffb0', 800, 'center');
+    ctx.globalAlpha = 0.5 + 0.5 * bad; ctx.fillStyle = '#f4f1d0'; ctx.beginPath(); ctx.arc(1140, 130, 26, 0, 7); ctx.fill(); ctx.fillStyle = '#6a6f78'; ctx.beginPath(); ctx.ellipse(1140, 142, 60 * bad + 1, 20 * bad + 1, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+    text('CLOUDS · DEW · SMOKE · HAZE', 950, 600, 19, AMBER, 800, 'center', bad);
+  },
+
+  // ---------- knowledge check ----------
+  quizintro(t, d) {
+    mapBG();
+    const a = reveal(0.3, 0.6);
+    text('KNOWLEDGE CHECK', 640, 260, 54, GREEN, 900, 'center', a);
+    text('Principles of Night Vision · TC 21-305-2 · Quiz 721-500-01.5', 640, 320, 22, '#c9e8cd', 600, 'center', a);
+    text('14 questions · answer before the reveal · pause the video if you need more time', 640, 380, 18, '#9dbba2', 600, 'center', reveal(1.5));
+  },
+
+  quiz(t, d) {
+    mapBG();
+    const sc = SC, letters = 'abcdef', multi = sc.correct.length > 1;
+    const revealT = sStart(1), shown = t >= revealT - 0.1;
+    panel(50, 100, 1180, 470);
+    text(`QUESTION ${sc.num} OF 14`, 80, 140, 16, GREEN, 900);
+    let y = 182; const qw = 1110;
+    sc.q.split('\n').forEach(par => { wrap(par, qw, 23, 600).forEach(l => { text(l, 80, y, 23, '#eaffef', 600); y += 31; }); });
+    y += 14;
+    const colW = multi ? 560 : 1100;
+    sc.choices.forEach((c, i) => { const L = letters[i], ok = sc.correct.includes(L); const ls = wrap(c, colW - 60, 21, 500);
+      if (shown && ok) { ctx.fillStyle = 'rgba(93,255,122,0.16)'; roundRect(76, y - 25, colW, ls.length * 28 + 10, 6); ctx.fill(); ctx.strokeStyle = GREEN; ctx.lineWidth = 2; ctx.stroke(); }
+      ls.forEach((l, k) => text(l, 96, y + k * 28, 21, shown && ok ? '#eaffef' : '#c9e8cd', shown && ok ? 800 : 500)); y += ls.length * 28 + 12; });
+    if (multi && shown) {
+      const bx = 680, by = Math.max(182 + 31 * 2, y - 40 - sc.correct.length * 34);
+      const a = reveal(revealT, 0.3); ctx.globalAlpha = a; panel(bx, by - 34, 520, sc.correct.length * 34 + 40, 'rgba(10,40,18,0.95)', 'rgba(93,255,122,0.6)'); ctx.globalAlpha = 1;
+      sc.correct.forEach((L, i) => text(`Blank ${i + 1}:  ${sc.choices[letters.indexOf(L)]}`, bx + 20, by + i * 34, 20, '#eaffef', 700, 'left', a));
+    }
+    if (!shown && t > sEnd(0)) {   // think-time countdown
+      const k = clamp((t - sEnd(0)) / (revealT - sEnd(0)), 0, 1), cx = 1170, cy = 520;
+      ctx.strokeStyle = '#1c3b24'; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(cx, cy, 30, 0, 7); ctx.stroke();
+      ctx.strokeStyle = AMBER; ctx.beginPath(); ctx.arc(cx, cy, 30, -Math.PI / 2, -Math.PI / 2 + (1 - k) * Math.PI * 2); ctx.stroke();
+      text(String(Math.ceil((1 - k) * (revealT - sEnd(0)))), cx, cy + 10, 26, AMBER, 900, 'center');
+    }
+    if (shown) tag(`ANSWER: ${sc.correct.map(c => c.toUpperCase()).join(', ')}`, 1080, 528, GREEN, reveal(revealT, 0.25), 18);
+  },
+
   summary(t, d) {
     mapBG();
-    const items = ['Inspect shroud and mount', 'Lock mount, pull test', 'Lock device, pull test', 'Lanyard on', 'Helmet tight + counterweight', 'Adjust: full circle, level', 'Diopter, then objective', 'Shake test', 'Never drive with a loose mount', 'Protect your eyes', 'Stow and account for it'];
+    const items = ['Inspect shroud and mount', 'Lock mount, pull test', 'Lock device, pull test', 'Lanyard on', 'Helmet tight + counterweight', 'Adjust: full circle, level', 'Diopter, then objective', 'Shake test', 'Never drive with a loose mount', 'Protect your eyes', 'Know night-vision principles', 'Stow and account for it'];
     panel(60, 80, 1160, 560); text('NVG MOUNTING', 90, 138, 36, GREEN, 900);
     const s0 = sStart(1), span = sEnd(SC.sentences.length - 1) - s0;
     items.forEach((s, i) => { const col = i < 6 ? 0 : 1, row = i < 6 ? i : i - 6; const x = 100 + col * 560, y = 200 + row * 70; const a = reveal(s0 + i * span / items.length, 0.35); if (a > 0) { ctx.globalAlpha = a; (i === 8 ? cross : check)(x + 8, y - 9, 30); ctx.globalAlpha = 1; } text(s, x + 40, y, 23, '#eaffef', 600, 'left', a); });
