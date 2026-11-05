@@ -1,10 +1,16 @@
 # NVG-Training
-Two narrated 5-minute training simulations for driving the **M1075A1 PLS** at night with the **AN/PVS-14**.
+Three narrated 5-minute training videos, plus a printable class packet, for driving the **M1075A1 PLS** at night with the **AN/PVS-14**.
 
 | Video | Download | Interactive player |
 |-------|----------|--------------------|
 | NVG Driving: Do's & Don'ts (AR 600-55) | [MP4](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/NVG_PVS-14_PLS_Dos_and_Donts.mp4) | [`docs/index.html`](docs/index.html) |
 | Ground Guiding at Night, with & without NVDs (AR 385-10, TC 21-60) | [MP4](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/NVG_Ground_Guiding_at_Night.mp4) | [`docs/ground-guide.html`](docs/ground-guide.html) |
+| NVD Safety (limits, care, batteries, accountability, failure drill, IR discipline, risk) | [MP4](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/NVG_NVD_Safety.mp4) | [`docs/nvd-safety.html`](docs/nvd-safety.html) |
+
+### Class packet (Day 1: classroom, written, familiarization)
+- [Instructor lesson plan, stations & GO/NO-GO roster (PDF)](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/class/1_Instructor_Lesson_Plan.pdf)
+- [Written exam (PDF)](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/class/2_Written_Exam.pdf)
+- [Answer key, instructor only (PDF)](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/class/3_Answer_Key_INSTRUCTOR_ONLY.pdf)
 
 ## Video 1: NVG Driving Do's & Don'ts
 An NVG simulation of Do's and Don'ts: **AN/PVS-14** monocular night vision device while driving the **M1075A1 PLS**, framed by **AR 600-55** (Army Driver and Operator Standardization Program).
@@ -73,8 +79,10 @@ curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-fil
 cd ..
 python3 sim/build_audio.py                       # video 1
 python3 sim/build_audio.py sim/ground-guide      # video 2
+python3 sim/build_audio.py sim/nvd-safety        # video 3
 python3 sim/build_artifact.py                                         # -> docs/index.html
 python3 sim/build_artifact.py sim/ground-guide docs/ground-guide.html
 node sim/render.js --dir sim/ground-guide --out NVG_Ground_Guiding_at_Night.mp4
+node sim/render.js --dir sim/nvd-safety --out NVG_NVD_Safety.mp4
 node sim/render.js            # --fps 30 --workers 4 ; --stills 10,60 for preview JPGs in build/
 ```

@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NVD Safety Brief</title>
+<style>
+  :root { --bg:#050806; --fg:#d8f5dc; --muted:#7f9a84; --accent:#5dff7a; }
+  html,body { margin:0; background:var(--bg); color:var(--fg); font-family: Inter, "DejaVu Sans", system-ui, sans-serif; }
+  #wrap { max-width:1280px; margin:0 auto; padding-block:16px; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); box-sizing:border-box; }
+  canvas { width:100%; height:auto; display:block; background:#000; border-radius:6px; }
+  #ctl { display:flex; gap:12px; align-items:center; margin-top:10px; }
+  #ctl button { background:#12301a; color:var(--fg); border:1px solid #2c5a36; border-radius:4px; padding:6px 14px; font:inherit; cursor:pointer; }
+  #ctl button:focus-visible, #ctl input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  #ctl input { flex:1; min-width:0; accent-color: var(--accent); }
+  #tc { font-variant-numeric: tabular-nums; color:var(--muted); min-width:90px; text-align:right; }
+  body.render #wrap { padding:0 !important; max-width:none; } body.render #ctl { display:none; } body.render canvas { border-radius:0; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c" width="1280" height="720"></canvas>
+  <div id="ctl"><button id="play">Play</button><input id="seek" type="range" min="0" max="300" step="0.01" value="0"><span id="tc">0:00</span></div>
+  <audio id="aud" src="narration.m4a" preload="auto"></audio>
+</div>
+<script src="timeline.js"></script>
+<script src="../engine.js"></script>
+<script>
+"use strict";
+// ---------- helpers ----------
+function pvs14(ox, oy, k = 1, hl = {}) {
+  const gl = n => `rgba(93,255,122,${0.18 + 0.82 * (hl[n] || 0)})`;
+  ctx.save(); ctx.translate(ox, oy); ctx.scale(k, k); ctx.lineWidth = 3;
+  ctx.fillStyle = '#26302a'; ctx.strokeStyle = gl('mount'); roundRect(150, -150, 150, 70, 10); ctx.fill(); ctx.stroke(); ctx.fillRect(210, -90, 30, 40);
+  ctx.fillStyle = '#2f3a33'; ctx.strokeStyle = 'rgba(93,255,122,0.25)'; roundRect(60, -60, 320, 120, 30); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#1b231e'; ctx.strokeStyle = gl('lens'); roundRect(380, -70, 70, 140, 14); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = hl.cap ? '#3a4a3e' : '#4a7d6a'; ctx.fillRect(446, -52, 8, 104);
+  if (hl.cap) { ctx.fillStyle = '#4b5a4f'; roundRect(448, -64, 26, 128, 8); ctx.fill(); }
+  ctx.strokeStyle = gl('eye'); ctx.fillStyle = '#1b231e'; roundRect(0, -50, 64, 100, 18); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = gl('batt'); ctx.fillStyle = '#1f2722'; ctx.beginPath(); ctx.arc(220, 76, 30, 0, 7); ctx.fill(); ctx.stroke();
+  if (hl.lanyard) { ctx.strokeStyle = `rgba(255,191,60,${hl.lanyard})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(300, -40); ctx.bezierCurveTo(360, -200, 520, -160, 540, -40); ctx.stroke(); }
+  ctx.restore();
+}
+function checklist(x, y, items, t0s, size = 21, gap = 52, w = 520) {
+  items.forEach((s, i) => { const a = reveal(t0s[i], 0.4); const yy = y + i * gap; ctx.globalAlpha = 0.25 + 0.75 * a; ctx.strokeStyle = '#3c7a4b'; ctx.lineWidth = 2; ctx.strokeRect(x, yy - 20, 28, 28); ctx.globalAlpha = 1;
+    if (a > 0) { ctx.globalAlpha = a; check(x + 14, yy - 6, 24); ctx.globalAlpha = 1; } wrap(s, w, size, 500).forEach((l, k) => text(l, x + 44, yy + k * (size + 4), size, '#d8f5dc', 500, 'left', 0.35 + 0.65 * a)); });
+}
+function speedPanel(mph, x = 40, y = 470, note = '', col = GREEN) { panel(x, y, 260, 84); text(Math.round(mph).toString(), x + 60, y + 56, 40, '#eaffef', 800, 'center'); text('MPH', x + 60, y + 74, 12, '#9dbba2', 700, 'center'); if (note) text(note, x + 112, y + 50, 15, col, 800); }
+function callout(label, x, y, a, align = 'left', col = '#eaffef') { if (a <= 0) return; ctx.font = `700 19px ${FONT}`; const w = ctx.measureText(label).width + 24; const bx = align === 'left' ? x : x - w; ctx.globalAlpha = a; ctx.fillStyle = 'rgba(0,0,0,0.72)'; roundRect(bx, y - 22, w, 34, 6); ctx.fill(); ctx.strokeStyle = 'rgba(93,255,122,0.5)'; ctx.lineWidth = 1.5; ctx.stroke(); ctx.globalAlpha = 1; text(label, bx + 12, y + 2, 19, col, 700, 'left', a); }
+
+// ---------- scenes ----------
+const SCENES = {
+  title(t, d) {
+    drawRoadWorld({ camZ: 3200 + t * 8 });
+    composeNVG({ gain: smooth(0, 2, t) });
+    const a = smooth(0.6, 1.6, t) * (1 - smooth(d - 1.2, d - 0.2, t));
+    ctx.globalAlpha = a * 0.82; ctx.fillStyle = '#000'; ctx.fillRect(0, 150, W, 300); ctx.globalAlpha = 1;
+    ctx.globalAlpha = a; pvs14(830, 330, 0.75, { lens: 0.6, mount: 0.6 }); ctx.globalAlpha = 1;
+    text('SAFETY BRIEF', 90, 240, 26, '#7dff8f', 700, 'left', a);
+    text('Night Vision Device Safety', 86, 318, 58, '#eaffef', 800, 'left', a);
+    text('AN/PVS-14  ·  Limits, care, emergencies, and risk', 90, 368, 26, '#c9e8cd', 500, 'left', a);
+    text('For drivers, ground guides, crews, and leaders', 90, 404, 20, '#88a98d', 500, 'left', a);
+  },
+
+  limits(t, d) {
+    drawRoadWorld({ camZ: 3400 + t * 7 });
+    composeNVG({});
+    const c1 = sStart(1), c2 = sStart(2);
+    callout('40° field of view', 960, 170, reveal(c1 + 0.8)); callout('Poor depth perception', 960, 250, reveal(c1 + 2.2));
+    callout('Less detail than normal vision', 960, 330, reveal(c1 + 3.6)); callout('No color', 960, 410, reveal(c1 + 5.0));
+    callout('Needs some light', 320, 210, reveal(c2 + 0.5), 'right'); callout("Can't see through dense", 320, 300, reveal(c2 + 2.0), 'right'); callout('fog, smoke, or dust', 320, 340, reveal(c2 + 2.0), 'right');
+    tag('AMPLIFIES LIGHT — DOES NOT TURN NIGHT INTO DAY', 640, 92, AMBER, reveal(sStart(0) + 0.5), 18);
+  },
+
+  illum(t, d) {
+    const camZ = 3600 + t * 6, objs = [{ type: 'truck', z: 3600 + 6 * 10 + 70, x: 1.4 }];
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    drawRoadWorld({ camZ, objects: objs, illum: 1 });
+    composeNVG({ cx: 330, cy: 330, r: 240, noise: 0.12 });
+    drawRoadWorld({ camZ, objects: objs, illum: 0.38 });
+    composeNVG({ cx: 950, cy: 330, r: 240, noise: 0.42, gain: 1.25, blur: 0.8, noiseBlur: 0.4 });
+    text('BRIGHT MOON', 330, 610, 20, '#9dffb0', 800, 'center'); text('clear image, earlier detection', 330, 636, 15, '#9dbba2', 600, 'center');
+    text('OVERCAST, NO MOON', 950, 610, 20, AMBER, 800, 'center'); text('darker, noisier, later detection', 950, 636, 15, '#9dbba2', 600, 'center');
+    tag('CHECK THE ILLUMINATION FORECAST', 640, 92, GREEN, reveal(sStart(2) + 0.3), 18);
+  },
+
+  obscurants(t, d) {
+    const s1 = sStart(1), s2 = sStart(2);
+    const vis = lerp(400, 22, smooth(0.5, s1 + 1, t));
+    const slow = smooth(s2, s2 + 3, t), v = lerp(9, 3, slow);
+    let camZ = 3900; camZ += Math.min(t, s2) * 9 + Math.max(0, t - s2) * lerp(9, 3, 0.5);
+    drawRoadWorld({ camZ, fog: vis, objects: [{ type: 'truck', z: 3900 + 9 * s2 + 22, x: 1.5 }] });
+    composeNVG({ noise: lerp(0.16, 0.3, smooth(0.5, s1, t)), contrast: lerp(1, 0.75, smooth(0.5, s1, t)) });
+    tag(vis < 60 ? 'DUST / FOG — HAZARDS HIDDEN UNTIL CLOSE' : 'CLEAR', 640, 92, vis < 60 ? RED : GREEN, 1, 20);
+    speedPanel(v / 0.44704, 40, 470, slow > 0.5 ? 'SLOW · INCREASE INTERVAL' : '', GREEN);
+    panel(990, 470, 250, 84); text('Visibility', 1115, 500, 15, '#c9e8cd', 700, 'center'); text(`≈ ${Math.round(vis)} m`, 1115, 538, 30, vis < 60 ? AMBER : '#eaffef', 800, 'center');
+  },
+
+  terrain(t, d) {
+    const s2 = sStart(2), stopT = s2 + 2.5;
+    const camZ = 4300 + Math.min(t, stopT) * 4 - Math.max(0, Math.min(t, stopT) - s2) * 4 * 0.5 * (Math.min(t, stopT) - s2) / 2.5;
+    const ditch = { type: 'ditch', z: 4300 + 4 * stopT + 9, x: 0, w: 9, lum: 0.3 };
+    drawRoadWorld({ camZ, objects: [ditch], illum: 0.8 });
+    const dist = ditch.z - camZ;
+    composeNVG({ noise: 0.2, post: c => { if (dist < 40 && t > sStart(1)) { const p = proj(camZ, 1.6, 0, 0, dist, 0); c.strokeStyle = `rgba(255,255,255,${0.9 * smooth(40, 25, dist)})`; c.lineWidth = 3; c.setLineDash([10, 8]); c.beginPath(); c.ellipse(p.x, p.y, 4.5 * p.s + 10, 0.4 * p.s + 10, 0, 0, 7); c.stroke(); c.setLineDash([]); } } });
+    tag('LOOKS LIKE LEVEL GROUND', 640, 92, AMBER, reveal(sStart(1) + 0.5) * (1 - reveal(s2, 0.3)), 18);
+    tag('A-DRIVER: "DITCH AHEAD — STOP"', 640, 92, GREEN, reveal(s2, 0.3), 20);
+    panel(990, 470, 250, 84); text('Distance to ditch', 1115, 500, 15, '#c9e8cd', 700, 'center'); text(`${dist.toFixed(0)} m`, 1115, 538, 30, '#eaffef', 800, 'center');
+  },
+
+  care(t, d) {
+    mapBG();
+    const hl = { lanyard: reveal(sStart(1)) , cap: t > sStart(1) + 1.5 && t < sStart(2) + 2 ? 1 : 0, lens: reveal(sStart(2) - 1) * (1 - reveal(sStart(3))) };
+    pvs14(70, 380, 0.95, hl);
+    text('AN/PVS-14', 290, 560, 24, '#cfe9d2', 800, 'center');
+    panel(660, 130, 580, 400); text('Care and handling', 690, 172, 22, '#eaffef', 800);
+    checklist(690, 232, ['Retention lanyard attached', 'Lens caps on when not in use', 'Clean lenses with lens paper only', 'Protect from impact and moisture', 'Daylight training cover in daylight'], [sStart(1) + 0.3, sStart(1) + 2.2, sStart(1) + 4.2, sStart(2) + 0.3, sStart(2) + 2.2], 20, 60);
+  },
+
+  battery(t, d) {
+    mapBG();
+    // AA battery
+    const bx = 150, by = 260;
+    ctx.fillStyle = '#2f3a33'; roundRect(bx, by, 300, 110, 16); ctx.fill(); ctx.fillStyle = '#3c7a4b'; roundRect(bx + 210, by, 90, 110, 16); ctx.fill();
+    ctx.fillStyle = '#9dbba2'; ctx.fillRect(bx + 300, by + 38, 18, 34);
+    text('+', bx + 255, by + 70, 40, '#eaffef', 800, 'center'); text('−', bx + 40, by + 70, 40, '#eaffef', 800, 'center'); text('AA', bx + 130, by + 68, 30, '#d8f5dc', 800, 'center');
+    text('Match the polarity marking on the device', bx + 150, by + 150, 16, '#9dbba2', 600, 'center', reveal(sStart(1)));
+    // cold
+    const ca = reveal(sStart(2)); if (ca > 0) { ctx.globalAlpha = ca; panel(150, 450, 300, 90); ctx.globalAlpha = 1; text('❄  Cold = shorter battery life', 300, 505, 19, '#c3cfe8', 700, 'center', ca); }
+    panel(660, 150, 580, 380); text('Battery safety', 690, 192, 22, '#eaffef', 800);
+    checklist(690, 252, ['Correct battery, right polarity', 'Always carry a spare', 'Expect less run time in the cold', 'Remove the battery for storage', 'Turn in used batteries per SOP'], [sStart(1) + 0.3, sStart(1) + 2.0, sStart(2) + 0.3, sStart(3) + 0.3, sStart(3) + 2.0], 20, 58);
+  },
+
+  account(t, d) {
+    mapBG();
+    const x = 200, y = 120;
+    panel(x, y, 880, 420, '#e9e4d2', '#9c9478');
+    text('SENSITIVE ITEM SIGN-OUT  (training example)', x + 30, y + 46, 22, '#2b2a22', 800);
+    const rows = [['Item', 'AN/PVS-14 with mount'], ['Serial number', 'Checked against hand receipt'], ['Signed out', '1830  ·  Driver'], ['Halt 1 / Halt 2', ''], ['End of mission', ''], ['Signed in', '']];
+    rows.forEach((r, i) => { const yy = y + 100 + i * 50; text(r[0], x + 40, yy, 20, '#2b2a22', 600); text(r[1], x + 400, yy, 20, '#2b2a22', 700); ctx.fillStyle = '#c9c2a8'; ctx.fillRect(x + 30, yy + 14, 820, 1); });
+    const marks = [[1, sStart(1) + 0.6], [2, sStart(1) + 0.3], [3, sStart(1) + 2.4], [4, sStart(1) + 3.6], [5, sStart(1) + 4.6]];
+    marks.forEach(([i, at]) => { const a = reveal(at, 0.3); if (a > 0) { ctx.globalAlpha = a; check(x + 760, y + 92 + i * 50, 28, '#1f7a34'); ctx.globalAlpha = 1; } });
+    text('ACCOUNTED FOR', x + 560, y + 92 + 4 * 50 + 6, 16, '#1f7a34', 800, 'left', reveal(sStart(1) + 3.6)); text('ACCOUNTED FOR', x + 560, y + 92 + 5 * 50 + 6 - 50 + 50, 16, '#1f7a34', 800, 'left', 0);
+    tag('LOST DEVICE = IMMEDIATE SEARCH + REPORT', 640, 600, RED, reveal(sStart(2) + 0.3), 20);
+  },
+
+  darkadapt(t, d) {
+    mapBG();
+    const gx = 120, gy = 520, gw = 760, gh = 330, Tm = 40;
+    ctx.strokeStyle = '#3c7a4b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(gx, gy - gh); ctx.lineTo(gx, gy); ctx.lineTo(gx + gw, gy); ctx.stroke();
+    for (let m = 0; m <= 40; m += 10) { const x = gx + m / Tm * gw; text(m + ' min', x, gy + 24, 14, '#9dbba2', 600, 'center'); ctx.fillStyle = 'rgba(93,255,122,0.08)'; ctx.fillRect(x, gy - gh, 1, gh); }
+    text('Unaided-eye night sensitivity', gx, gy - gh - 16, 16, '#c9e8cd', 700);
+    text('Illustrative', gx + gw, gy - gh - 16, 13, '#7f9a84', 600, 'right');
+    const flashM = 24, cur = smooth(0.5, d - 1.5, t) * Tm;
+    const sens = m => m < flashM ? 1 - Math.exp(-m / 9) : 0.04 + (1 - Math.exp(-(m - flashM) / 9)) * 0.96;
+    ctx.strokeStyle = GREEN; ctx.lineWidth = 4; ctx.beginPath();
+    for (let m = 0; m <= cur; m += 0.2) { const x = gx + m / Tm * gw, y = gy - sens(m) * gh * 0.95; m ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
+    if (cur > flashM) { const x = gx + flashM / Tm * gw; ctx.strokeStyle = RED; ctx.setLineDash([6, 6]); ctx.beginPath(); ctx.moveTo(x, gy - gh); ctx.lineTo(x, gy); ctx.stroke(); ctx.setLineDash([]); text('white-light flash', x + 8, gy - gh + 20, 15, RED, 800); if (cur < flashM + 1.5) { ctx.fillStyle = 'rgba(255,255,240,0.5)'; ctx.fillRect(0, 0, W, H); } }
+    text('fully adapted ≈ 30+ min', gx + 0.2 * gw, gy - gh * 0.9, 15, '#9dffb0', 700, 'center', cur > 18 ? 1 : 0);
+    panel(930, 160, 310, 300); text('Protect it', 955, 200, 21, '#eaffef', 800);
+    checklist(955, 250, ['Keep the cab dark', 'Use filtered light only', 'Keep the unaided eye ready'], [sStart(2) + 0.3, sStart(2) + 1.6, sStart(2) + 3.0], 18, 64, 240);
+  },
+
+  failure(t, d) {
+    const fT = sStart(0) + 1.2, s1 = sStart(1), s2 = sStart(2);
+    const v = lerp(25, 0, smooth(fT + 0.5, s2 + 4, t)), dz = v * 0.44704;
+    // integrate position approximately
+    let camZ = 4700, steps = 60; for (let i = 0; i < steps; i++) { const tt = t * i / steps; camZ += lerp(25, 0, smooth(fT + 0.5, s2 + 4, tt)) * 0.44704 * (t / steps); }
+    const laneX = lerp(1.6, 4.8, smooth(s2, s2 + 4, t));
+    drawRoadWorld({ camZ, laneX });
+    const flick = t > fT - 0.6 && t < fT ? (Math.floor(t * 14) % 2 ? 0.3 : 1) : 1;
+    if (t < fT) composeNVG({ gain: flick }); else composeUnaided({ gain: 0.22 });
+    const msgs = [[fT, 'DEVICE FAILED', RED], [fT + 1.0, 'HOLD THE WHEEL STEADY · SLOW DOWN', AMBER], [s1, 'TELL THE CREW · UNAIDED EYE + A-DRIVER', AMBER], [s2, 'PULL OFF AND STOP WHERE SAFE', GREEN], [sStart(3), 'TROUBLESHOOT ONLY WHEN STOPPED', GREEN]];
+    let m = null; for (const x of msgs) if (t >= x[0]) m = x;
+    if (m) tag(m[1], 640, 92, m[2], 1, 20);
+    speedPanel(v, 40, 470, v < 0.5 ? 'STOPPED' : '', GREEN);
+  },
+
+  strain(t, d) {
+    mapBG();
+    // head + helmet side view
+    const hx = 330, hy = 330;
+    ctx.fillStyle = '#2f3a33'; ctx.beginPath(); ctx.arc(hx, hy, 110, Math.PI, 0); ctx.lineTo(hx + 110, hy + 20); ctx.lineTo(hx - 110, hy + 20); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#1f2722'; ctx.beginPath(); ctx.arc(hx + 10, hy + 70, 80, 0, 7); ctx.fill();
+    ctx.fillStyle = '#1f2722'; ctx.fillRect(hx - 30, hy + 140, 60, 90);
+    ctx.fillStyle = '#3c4a40'; roundRect(hx + 100, hy - 10, 150, 50, 10); ctx.fill(); ctx.fillRect(hx + 90, hy - 30, 30, 40);
+    text('PVS-14', hx + 175, hy - 20, 15, '#c9e8cd', 700, 'center');
+    const cw = reveal(sStart(2) + 0.3);
+    ctx.globalAlpha = 0.3 + 0.7 * cw; ctx.fillStyle = GREEN; roundRect(hx - 160, hy - 40, 50, 60, 8); ctx.fill(); ctx.globalAlpha = 1;
+    text('counterweight', hx - 135, hy + 46, 14, GREEN, 700, 'center', cw);
+    ctx.strokeStyle = AMBER; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(hx, hy + 170, 60, -2.6, -0.5); ctx.stroke(); text('neck load', hx, hy + 260, 15, AMBER, 700, 'center', reveal(sStart(0) + 1));
+    panel(660, 120, 580, 430); text('Reduce strain', 690, 162, 22, '#eaffef', 800);
+    checklist(690, 222, ['Counterweight if issued', 'Balance and adjust the mount', 'Take breaks', 'Follow the driver rest plan', 'After removal, let your eyes adjust before driving unaided'], [sStart(2) + 0.3, sStart(2) + 1.6, sStart(2) + 2.8, sStart(2) + 3.6, sStart(3) + 0.5], 19, 62, 480);
+  },
+
+  irdiscipline(t, d) {
+    const camZ = 5000, tr = { type: 'truck', z: camZ + 140, x: 1.0 };
+    drawRoadWorld({ camZ, objects: [tr], illum: 0.7 });
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    composeUnaided({ rect: [40, 150, 560, 380], radius: 10, gain: 0.35 });
+    const on = 0.75 + 0.25 * Math.sin(t * 2);
+    composeNVG({ cx: 950, cy: 340, r: 210, post: c => { const p = proj(camZ, 1.6, 0, 1.0, 140, 2.2); glow(c, p.x, p.y, 120 * on, '255,255,255', 1); glow(c, p.x, p.y, 20, '255,255,255', 1); } });
+    text('NAKED EYE', 320, 136, 18, '#c3cfe8', 800, 'center'); text('IR illuminator: invisible', 320, 560, 16, '#c3cfe8', 700, 'center');
+    text('ANY NIGHT VISION — INCLUDING THE ENEMY', 950, 116, 17, RED, 800, 'center'); text('IR illuminator: a beacon', 950, 580, 16, RED, 700, 'center', reveal(sStart(1) + 1));
+    tag('USE IR ONLY AS SOP AND TACTICAL SITUATION ALLOW', 640, 640 - 40, GREEN, reveal(sStart(2) + 0.3), 18);
+  },
+
+  leaders(t, d) {
+    mapBG();
+    panel(60, 110, 560, 460); text('Deliberate risk assessment', 84, 150, 22, '#eaffef', 800); text('DD Form 2977 (example entries)', 84, 176, 15, '#9dbba2', 600);
+    const rows = [['Hazard', 'Low illumination / obscurants'], ['Hazard', 'Unqualified or fatigued driver'], ['Hazard', 'Device failure'], ['Control', 'Speed limits, intervals, A-driver on NVDs'], ['Control', 'Spare batteries, PCCs, rest plan'], ['Residual risk', '______  ·  Approved by ______']];
+    rows.forEach((r, i) => { const a = reveal(sStart(0) + 1 + i * 0.7, 0.3); const y = 220 + i * 56; text(r[0], 84, y, 15, r[0] === 'Hazard' ? AMBER : r[0] === 'Control' ? GREEN : '#c9e8cd', 800, 'left', a); wrap(r[1], 400, 18, 500).forEach((l, k) => text(l, 200, y + k * 22, 18, '#d8f5dc', 500, 'left', a)); });
+    panel(660, 110, 580, 460); text('Go / no-go before the mission', 684, 150, 22, '#eaffef', 800);
+    const gg = [['Illumination', 'GO ≥ ____ %', sStart(1)], ['Visibility / weather', 'GO ≥ ____ m', sStart(1) + 1.2], ['Every driver NVD qualified', 'on license record', sStart(2)], ['Every device PMCS\'d', 'batteries + spares', sStart(3)], ['Rest plan briefed', 'driver rotation', sStart(3) + 1.0]];
+    gg.forEach(([a1, b1, at], i) => { const a = reveal(at + 0.3, 0.4); const y = 216 + i * 70; ctx.globalAlpha = 0.25 + 0.75 * a; ctx.strokeStyle = '#3c7a4b'; ctx.lineWidth = 2; ctx.strokeRect(684, y - 20, 28, 28); ctx.globalAlpha = 1; if (a > 0) { ctx.globalAlpha = a; check(698, y - 6, 24); ctx.globalAlpha = 1; } text(a1, 728, y, 20, '#eaffef', 700, 'left', 0.35 + 0.65 * a); text(b1, 728, y + 24, 15, '#9dbba2', 600, 'left', 0.35 + 0.65 * a); });
+  },
+
+  summary(t, d) {
+    mapBG();
+    const items = ['Know the limits', 'Plan for the light level', 'Slow down for dust, fog, dark terrain', 'Care for the device', 'Manage batteries', 'Account for it at all times', 'Protect your night vision', 'Know the failure drill', 'Manage strain and fatigue', 'Keep IR discipline', 'Manage the risk'];
+    panel(60, 80, 1160, 560); text('NVD SAFETY', 90, 138, 36, GREEN, 900);
+    const s0 = sStart(1), span = sEnd(SC.sentences.length - 1) - s0;
+    items.forEach((s, i) => { const col = i < 6 ? 0 : 1, row = i < 6 ? i : i - 6; const x = 100 + col * 560, y = 200 + row * 70; const a = reveal(s0 + i * span / items.length, 0.35); if (a > 0) { ctx.globalAlpha = a; check(x + 8, y - 9, 30); ctx.globalAlpha = 1; } text(s, x + 40, y, 23, '#eaffef', 600, 'left', a); });
+  },
+
+  end(t, d) {
+    drawRoadWorld({ camZ: 5400 + t * 6 });
+    composeNVG({ gain: 1 - smooth(d - 3, d, t) });
+    ctx.globalAlpha = 0.75; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+    const a = reveal(0.3, 0.8) * (1 - smooth(d - 1.5, d, t));
+    text('Own the night. Safely.', 640, 280, 46, '#eaffef', 800, 'center', a);
+    const refs = ['TC 21-305-2  — Training Program for Night Vision Goggle Driving Operations', 'AR 600-55  — Army Driver and Operator Standardization Program', 'AN/PVS-14 operator TM  ·  DD Form 2977  ·  Unit SOP'];
+    refs.forEach((s, i) => text(s, 640, 360 + i * 36, 20, '#c9e8cd', 500, 'center', a * reveal(1.0 + i * 0.4)));
+    text('Training aid only. Always verify against the current publications and your unit SOP.', 640, 520, 16, '#7f9a84', 500, 'center', a * reveal(2.5));
+  },
+};
+startPlayer();
+</script>
+</body>
+</html>

@@ -41,6 +41,7 @@ SAY = [
     (r"PVS-14", "P V S fourteen"),
     (r"AR 600-55", "A-R six-hundred fifty-five"),
     (r"AR 385-10", "A-R three-eighty-five ten"),
+    (r"DD Form 2977", "D, D, Form twenty-nine seventy-seven"),
     (r"TC 21-60", "T C twenty-one sixty"),
     (r"\bIR\b", "I-R"),
     (r"TC 21-305-2", "T C twenty-one, three-oh-five, dash two"),

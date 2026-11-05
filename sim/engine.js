@@ -49,13 +49,14 @@ function proj(camZ, laneX, yaw, xOff, z, y) {
 function drawRoadWorld(o) {
   CURV = o.straight ? 0 : 1; CAMH = o.camH ?? 2.6;
   const g = wx, camZ = o.camZ, yaw = o.yaw || 0, laneX = o.laneX ?? 1.6, il = o.illum ?? 1;
+  const FOG = o.fog || 0, fogL = 0.36 * il, fm = (l, z) => FOG ? lerp(l, fogL, 1 - Math.exp(-z / FOG)) : l;
   // sky
   const sky = g.createLinearGradient(0, 0, 0, HY);
   sky.addColorStop(0, gray(0.10 * il)); sky.addColorStop(1, gray(0.34 * il));
-  g.fillStyle = sky; g.fillRect(0, 0, W, HY + 1);
-  for (const s of STARS) { const x = CX + (s.a - yaw) * F * 0.9; if (x < 0 || x > W) continue; g.fillStyle = gray(s.b); g.fillRect(x, s.y, 2, 2); }
+  g.fillStyle = FOG ? gray(fogL) : sky; g.fillRect(0, 0, W, HY + 1);
+  if (!FOG) for (const s of STARS) { const x = CX + (s.a - yaw) * F * 0.9; if (x < 0 || x > W) continue; g.fillStyle = gray(s.b); g.fillRect(x, s.y, 2, 2); }
   // tree line on the horizon
-  g.fillStyle = gray(0.12 * il);
+  g.fillStyle = gray(fm(0.12 * il, 300));
   g.beginPath(); g.moveTo(0, HY + 2);
   for (let x = 0; x <= W; x += 6) { const a = (x - CX) / F + yaw + camZ * 0.0004; const h = 10 + 14 * hash(Math.floor(a * 40)) + 8 * Math.sin(a * 9) + 6 * Math.sin(a * 23); g.lineTo(x, HY - h); }
   g.lineTo(W, HY + 2); g.closePath(); g.fill();
@@ -64,11 +65,11 @@ function drawRoadWorld(o) {
     const z = CAMH * F / (y - HY); const wz = camZ + z;
     const fade = clamp(1 - z / 400, 0.25, 1);
     const tex = 0.03 * hash(Math.floor(wz * 1.3)) + 0.02 * ((Math.floor(wz / 4) & 1));
-    g.fillStyle = gray((0.24 + tex) * il * (0.7 + 0.3 * fade)); g.fillRect(0, y, W, 1);
+    g.fillStyle = gray(fm((0.24 + tex) * il * (0.7 + 0.3 * fade), z)); g.fillRect(0, y, W, 1);
     const xr = curve(wz) - curve(camZ) - dcurve(camZ) * z - laneX;
     const cx = CX + (xr / z - yaw) * F, hw = 4.2 / z * F;
-    g.fillStyle = gray((0.46 + tex * 1.5) * il * (0.75 + 0.25 * fade)); g.fillRect(cx - hw, y, hw * 2, 1);
-    g.fillStyle = gray((0.34 + tex) * il); const rw = Math.max(1, 0.35 / z * F);
+    g.fillStyle = gray(fm((0.46 + tex * 1.5) * il * (0.75 + 0.25 * fade), z)); g.fillRect(cx - hw, y, hw * 2, 1);
+    g.fillStyle = gray(fm((0.34 + tex) * il, z)); const rw = Math.max(1, 0.35 / z * F);
     g.fillRect(cx - 1.9 / z * F - rw / 2, y, rw, 1); g.fillRect(cx + 1.0 / z * F - rw / 2, y, rw, 1);
   }
   // props far -> near
@@ -79,6 +80,7 @@ function drawRoadWorld(o) {
   for (const [z, p] of vis) {
     const b = proj(camZ, laneX, yaw, p.x, z, 0), s = b.s; if (b.x < -200 || b.x > W + 200) continue;
     const fog = clamp(1 - z / 450, 0.3, 1);
+    g.globalAlpha = FOG ? Math.exp(-z / FOG) : 1;
     if (p.type === 'tree') {
       g.fillStyle = gray(0.10 * il * fog + 0.04); g.beginPath();
       g.ellipse(b.x, b.y - p.h * 0.62 * s, p.h * 0.32 * s, p.h * 0.5 * s, 0, 0, Math.PI * 2); g.fill();
@@ -110,9 +112,10 @@ function drawRoadWorld(o) {
       g.fillStyle = gray(0.55 * il + 0.1); g.beginPath(); g.moveTo(b.x - 0.18 * s, b.y); g.lineTo(b.x, b.y - 0.7 * s); g.lineTo(b.x + 0.18 * s, b.y); g.fill();
       g.fillStyle = gray(0.9); g.fillRect(b.x - 0.08 * s, b.y - 0.42 * s, 0.16 * s, Math.max(1, 0.08 * s));
     } else if (p.type === 'ditch') {
-      const w = 6 * s, d = 1.4 * s; g.fillStyle = gray(0.05); g.beginPath(); g.ellipse(b.x, b.y, w / 2, Math.max(2, d * 0.25), 0, 0, 7); g.fill();
+      const w = (p.w || 6) * s, d = 1.4 * s; g.fillStyle = gray(p.lum ?? 0.05); g.beginPath(); g.ellipse(b.x, b.y, w / 2, Math.max(2, d * 0.25), 0, 0, 7); g.fill();
     }
   }
+  g.globalAlpha = 1;
   if (o.flank) drawFlank(g, il);
   if (o.cab === false) { if (o.extras) o.extras(g); return; }
   // cab: dash + pillars (fixed to vehicle, so shifted by head yaw)
