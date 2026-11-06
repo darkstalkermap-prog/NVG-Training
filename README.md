@@ -1,5 +1,5 @@
 # NVG-Training
-Four narrated training videos (5 to 10 minutes), plus a printable class packet, for driving the **M1075A1 PLS** at night with the **AN/PVS-14**.
+Five narrated training videos (5 to 14 minutes), plus a printable class packet, for driving the **M1075A1 PLS** at night with the **AN/PVS-14**.
 
 | Video | Download | Interactive player |
 |-------|----------|--------------------|
@@ -7,6 +7,7 @@ Four narrated training videos (5 to 10 minutes), plus a printable class packet, 
 | Ground Guiding at Night, with & without NVDs (AR 385-10, TC 21-60) | [MP4](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/NVG_Ground_Guiding_at_Night.mp4) | [`docs/ground-guide.html`](docs/ground-guide.html) |
 | NVD Safety (limits, care, batteries, accountability, failure drill, IR discipline, risk) | [MP4](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/NVG_NVD_Safety.mp4) | [`docs/nvd-safety.html`](docs/nvd-safety.html) |
 | How-To: Mounting the PVS-14, mount checks, eye health, benefits, Principles of Night Vision + 14-question knowledge check (TC 21-305-2 Quiz 721-500-01.5), about 10 min | [MP4](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/NVG_Mounting_HowTo.mp4) | [`docs/nvg-howto.html`](docs/nvg-howto.html) |
+| Convoy Commander & Assistant Convoy Commander (733rd TC): requirements, preparation, the 12-item convoy brief using the March BA FTX 2025 example, execution, case study, 8-question knowledge check, about 13.5 min | [MP4](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/NVG_Convoy_Commander_ACC.mp4) | [`docs/convoy.html`](docs/convoy.html) |
 
 ### Class packet (Day 1: classroom, written, familiarization)
 - [Instructor lesson plan, stations & GO/NO-GO roster (PDF)](https://github.com/darkstalkermap-prog/NVG-Training/raw/main/class/1_Instructor_Lesson_Plan.pdf)
@@ -62,6 +63,7 @@ An NVG simulation of Do's and Don'ts: **AN/PVS-14** monocular night vision devic
 
 ## How it's built
 - `sim/engine.js` — shared renderer (NVG tube, naked-eye view, world, PLS drawings, captions, player).
+- `sim/convoy/` — video 5. `script.json` is the reviewed script (doctrine research plus independent review), `make_scenes.py` turns it into `scenes.json`, and `head.part`/`body.part` build `index.html`.
 - `sim/ground-guide/` — video 2 (its own `scenes.json`, `index.html`, `timeline.js`, `narration.m4a`).
 - `sim/scenes.json` — video 1 script: scene order, DO/DON'T type, on-screen title, references, narration text. Edit this to change wording.
 - `sim/build_audio.py` — neural text-to-speech (Kokoro, voice `am_michael`; falls back to espeak-ng if the model isn't present), fits the total to 300 s, writes `build/narration.wav` and `sim/timeline.js` (sentence timings for captions).
@@ -82,10 +84,12 @@ python3 sim/build_audio.py                       # video 1
 python3 sim/build_audio.py sim/ground-guide      # video 2
 python3 sim/build_audio.py sim/nvd-safety        # video 3
 python3 sim/build_audio.py sim/nvg-howto         # video 4
+python3 sim/convoy/make_scenes.py && python3 sim/build_audio.py sim/convoy   # video 5
 python3 sim/build_artifact.py                                         # -> docs/index.html
 python3 sim/build_artifact.py sim/ground-guide docs/ground-guide.html
 node sim/render.js --dir sim/ground-guide --out NVG_Ground_Guiding_at_Night.mp4
 node sim/render.js --dir sim/nvd-safety --out NVG_NVD_Safety.mp4
 node sim/render.js --dir sim/nvg-howto --out NVG_Mounting_HowTo.mp4
+node sim/render.js --dir sim/convoy --out NVG_Convoy_Commander_ACC.mp4
 node sim/render.js            # --fps 30 --workers 4 ; --stills 10,60 for preview JPGs in build/
 ```

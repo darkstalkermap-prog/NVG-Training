@@ -1,0 +1,718 @@
+{
+ "scenes": [
+  {
+   "id": "title",
+   "title": "Convoy Commander & Assistant Convoy Commander",
+   "kind": "info",
+   "narration": "Welcome to Convoy Commander and Assistant Convoy Commander training for the 733rd Transportation Company. You will learn the CC and ACC requirements, and how to plan, brief and lead a convoy. Our example is a past exercise, the March BA FTX 2025 move to JBMDL.",
+   "onscreen": [
+    "Convoy Commander & Assistant Convoy Commander",
+    "733rd Transportation Company",
+    "Worked example: March BA FTX 2025",
+    "Past training exercise, shown for instruction only"
+   ],
+   "ref": "733rd TC",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes"
+   ]
+  },
+  {
+   "id": "roles",
+   "title": "Convoy Organization",
+   "kind": "info",
+   "narration": "A convoy breaks into serials and march units, each with a head, main body and trail. Our small example has two elements, called serials. The CC commands the convoy, and each serial commander runs a serial. Most SOPs put the ACC, the second in command, toward the rear. The CC and ACC never share a vehicle, so one incident cannot take out both leaders.",
+   "onscreen": [
+    "Convoy > serials > march units",
+    "Each: head, main body, trail",
+    "CC: commands the whole convoy",
+    "ACC: usually toward the rear (per SOP)",
+    "CC and ACC: never the same vehicle"
+   ],
+   "ref": "ATP 4-11; FM 55-30 (legacy); CALL",
+   "sources": [
+    "https://ops.fhwa.dot.gov/publications/fhwahop05029/appendix_b.htm",
+    "https://www.globalsecurity.org/military/library/policy/army/fm/3-07-22/ch6-ii.htm",
+    "https://armymilitarypolice.tpub.com/mp1007c/Coordinate-With-Convoy-Commander-55.htm",
+    "https://www.scribd.com/document/468236176/us-call-4-24-2004-pdf"
+   ]
+  },
+  {
+   "id": "duties",
+   "title": "CC and ACC Duties",
+   "kind": "info",
+   "narration": "The CC plans, briefs, controls and reports to higher. The ACC takes command if the CC cannot continue, so train the ACC to the same standard. Per your SOP, the ACC may also stage vehicles, prevent straggling, and run recovery. At the 541st Transportation Company's evaluation, the CC and ACC briefed as a team.",
+   "onscreen": [
+    "CC: plan, brief, control, report",
+    "ACC: second in command",
+    "ACC takes over if the CC can't continue",
+    "Train the ACC to the CC standard",
+    "ACC (per SOP): staging, stragglers, recovery",
+    "541st TC: CC + ACC brief as a team"
+   ],
+   "ref": "Unit SOP; CALL",
+   "sources": [
+    "https://www.globalsecurity.org/military/library/policy/army/fm/3-07-22/ch6-ii.htm",
+    "https://www.scribd.com/document/468236176/us-call-4-24-2004-pdf",
+    "https://dvidshub.net/news/311865/training-tragedy",
+    "https://www.army.mil/article/148699/541st_Transportation_Company_tests_its_METL"
+   ]
+  },
+  {
+   "id": "requirements",
+   "title": "Requirements for CC and ACC",
+   "kind": "info",
+   "narration": "Your commander designates the CC and ACC, and your SOP sets rank and certification. The CC may be an officer or an NCO, depending on convoy size. Both must know AR 600-55, because the CC ensures every driver is licensed on their vehicle, and every truck has a vehicle commander or senior occupant. The ACC meets the same standard, ready to take command at any moment. Both must know the route and comms plan cold, build a strip map, complete a risk assessment, and lead the breakdown and casualty drills. At the 454th Transportation Company, new CCs shadowed an experienced CC, then needed 80 out of 100 to certify.",
+   "onscreen": [
+    "Commander designates; SOP sets rank",
+    "CC: officer or NCO, by convoy size",
+    "Licensed drivers (AR 600-55); a VC or senior occupant per truck",
+    "ACC: same standard as the CC",
+    "Can do: route, comms, strip map, DD 2977, drills",
+    "Example: shadow, then certify (80/100)"
+   ],
+   "ref": "Unit SOP; AR 600-55; USARC Pam 56-1; STP 21-24",
+   "sources": [
+    "https://armymilitarypolice.tpub.com/mp1031b/Convoy-Organization-Contd-45.htm",
+    "https://www.globalsecurity.org/military/library/policy/army/fm/19-4/Ch13.htm",
+    "https://www.dvidshub.net/news/5704/convoy-commanders-rule-roads",
+    "https://www.usar.army.mil/Portals/98/Documents/Publications/PAMS/Convoy Commanders Guide.pdf",
+    "https://home.army.mil/hood/9617/6903/4948/POLICY_LETTER_17_Driver_and_Operator_Program.pdf",
+    "https://armystudyguide.com/content/SMCT_CTT_Tasks/Skill_Levels_2_4/55188m0001-sl3-lead-a-con.shtml",
+    "https://armystudyguide.com/content/SMCT_CTT_Tasks/Skill_Levels_2_4/5517214326-sl4-perform-du.shtml"
+   ]
+  },
+  {
+   "id": "prep",
+   "title": "Preparation: Troop Leading Procedures",
+   "kind": "do",
+   "narration": "Start troop leading procedures the moment you get the mission, and issue a warning order. A Battle Assembly move is usually known weeks out, so use the time between drills for recon, clearance and coordination. Recon the route, at least by map, then build the strip map, risk assessment, manifest and comms plan. Brief, take a back-brief, rehearse, and supervise with PCCs and PCIs. Keep one-third of the time, and give two-thirds to your Soldiers.",
+   "onscreen": [
+    "Receive mission, issue WARNO",
+    "BA move: plan between drills",
+    "Recon the route (map recon minimum)",
+    "Strip map, risk, manifest, comms",
+    "Clearance and coordination with higher",
+    "Brief, back-brief, rehearse, PCC/PCI",
+    "1/3 for you, 2/3 for your Soldiers"
+   ],
+   "ref": "FM 5-0 (TLP); STP 21-24 task 551-88M-0001",
+   "sources": [
+    "https://irp.fas.org/doddir/army/attp5-0-1.pdf",
+    "https://armystudyguide.com/content/SMCT_CTT_Tasks/Skill_Levels_2_4/55188m0001-sl3-lead-a-con.shtml",
+    "https://www.globalsecurity.org/military/library/report/call/call_99-6_movement.htm",
+    "https://www.slideshare.net/slideshow/convoy-leadertraininghandbook/28029592"
+   ]
+  },
+  {
+   "id": "agenda",
+   "title": "The Convoy Brief: March BA FTX 2025",
+   "kind": "info",
+   "narration": "Here is the twelve-item agenda from the March BA FTX 2025 convoy brief. Many items match parts of a five-paragraph order, but it is a unit checklist, not an OPORD.",
+   "onscreen": [
+    "1-2: Introduction, paper and writing utensil",
+    "3-4: PCC/PCI, risk assessment",
+    "5-6: Manifest, convoy clearance",
+    "7-8: Communications, fuel cards",
+    "9-10: Route, contingency plan",
+    "11-12: Safety, back-brief"
+   ],
+   "ref": "March BA FTX 2025: past exercise, example only",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes",
+    "https://www.scribd.com/doc/293034271/Convoy-Leader-Training-Handbook"
+   ]
+  },
+  {
+   "id": "intro",
+   "title": "Items 1-2: Introduction",
+   "kind": "do",
+   "narration": "In item one, the CC introduces themselves, the ACC and the serial commanders, and says which serial each leader rides with. Then the CC states the mission: move personnel and equipment from Reading to JBMDL and back. Item two: every Soldier brings paper and a writing utensil to write down times, checkpoints and callsigns.",
+   "onscreen": [
+    "1. Intro: CC, ACC, serial commanders",
+    "Say which serial each leader rides with",
+    "Mission: Reading to JBMDL and back",
+    "2. Bring paper and a writing utensil",
+    "Write down times, CKPTs, callsigns"
+   ],
+   "ref": "March BA FTX 2025: past exercise, example only",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes"
+   ]
+  },
+  {
+   "id": "pcc",
+   "title": "Item 3: PCCs and PCIs",
+   "kind": "do",
+   "narration": "Item three is PCCs and PCIs. Every Soldier shows ID tags, a civilian license, a military license, CAC, ACH, gloves and a water source. Beyond the brief's list, check each vehicle's dispatch packet and accident forms. PMCS every truck with the dash ten TM, and fix or report faults before SP. Leaders also check the warning kit, fire extinguisher, basic issue items and tow bars.",
+   "onscreen": [
+    "ID tags, CAC, ACH, gloves, water source",
+    "Civilian and military license (AR 600-55)",
+    "Also check: dispatch packet, accident forms",
+    "PMCS per -10 TM, faults fixed/reported",
+    "Warning kit, extinguisher, BII, tow bars"
+   ],
+   "ref": "March BA FTX 2025 (past exercise); CALL 99-12",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes",
+    "https://www.globalsecurity.org/military/library/report/call/call_99-12_pccpci.htm",
+    "https://www.globalsecurity.org/military/library/policy/army/fm/3-19-4/appende.htm",
+    "https://www.army.mil/article-amp/249297/digital_pmcs_increasing_the_efficiency_while_minimizing_risk"
+   ]
+  },
+  {
+   "id": "risk",
+   "title": "Item 4: Risk Assessment",
+   "kind": "do",
+   "narration": "Item four is the risk assessment, on DD Form 2977, the Deliberate Risk Assessment Worksheet. List hazards like traffic, construction, fatigue and weather, then assign controls like licensed drivers, a full brief, and fixed speeds and intervals. Overall risk is never lower than the highest residual risk of any hazard. This brief assessed the risk as Low, which still needs sign-off from the approval authority. If risk rises on the move, halt somewhere safe and get the approval authority's decision.",
+   "onscreen": [
+    "DD 2977: Deliberate Risk Assessment",
+    "Hazards: traffic, construction, fatigue",
+    "Controls: licensing, brief, speed",
+    "Overall risk >= highest single hazard",
+    "March BA FTX: risk assessed LOW",
+    "Risk goes up? Safe halt, re-approval"
+   ],
+   "ref": "ATP 5-19; DD Form 2977",
+   "sources": [
+    "https://www.esd.whs.mil/Directives/forms/dd2500_2999/DD2977",
+    "https://irp.fas.org/doddir/army/atp5-19.pdf",
+    "https://home.army.mil/parks/download_file/view/432/331",
+    "https://media.defense.gov/2019/Feb/28/2002094198/-1/-1/0/AEP385-15-1.PDF"
+   ]
+  },
+  {
+   "id": "manifest",
+   "title": "Item 5: Convoy Manifest",
+   "kind": "info",
+   "narration": "Item five is the manifest: 7 vehicles and 13 personnel in two serials. Vehicles include PLS and LMTV trucks. Every weapon and sensitive item, here an M4A1, is listed with an assigned custodian who keeps positive control the whole trip. The order of march comes from the manifest, so every driver knows their position and callsign.",
+   "onscreen": [
+    "7 vehicles",
+    "13 personnel",
+    "2 serials",
+    "PLS, LMTV (full list on manifest)",
+    "Weapons/SI: assigned custodian",
+    "Order of march from the manifest"
+   ],
+   "ref": "March BA FTX 2025: past exercise, example only",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes",
+    "https://www.globalsecurity.org/military/library/report/call/call_99-14_convoy.htm"
+   ]
+  },
+  {
+   "id": "clearance",
+   "title": "Item 6: Convoy Clearance",
+   "kind": "do",
+   "narration": "Item six is convoy clearance. On public highways, a convoy is six or more vehicles under one commander, or ten or more per hour on the same route. Clearance is requested on DD Form 1265, through channels to the Defense Movement Coordinator of the starting state. The March BA brief listed clearance as not necessary. The CC must know why, so confirm the basis with your movement NCO or S3 and keep it on file. A loaded PLS may still need a DD Form 1266 permit for size or weight.",
+   "onscreen": [
+    "Convoy: 6+ vehicles, one commander",
+    "Or 10+ vehicles per hour, same route",
+    "Request: DD Form 1265 to origin-state DMC",
+    "March BA brief: not necessary (confirm basis with S3)",
+    "Know why; keep the answer on file",
+    "Loaded PLS: may need DD Form 1266"
+   ],
+   "ref": "DTR 4500.9-R Part III; DD Forms 1265/1266",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes",
+    "https://webarchive.library.unt.edu/web/20121006195555/http://www.dla.mil/dlaps/dlar/r4540.8.htm",
+    "https://www.esd.whs.mil/Directives/forms/dd1000_1499/DD1265",
+    "https://www.esd.whs.mil/Directives/forms/dd1000_1499/DD1266/",
+    "https://ops.fhwa.dot.gov/publications/fhwahop05029/chapter_5.htm",
+    "https://webarchive.library.unt.edu/web/20130218002118/http:/www.transcom.mil/dtr/part-iii/dtr_part_iii_app_f.pdf"
+   ]
+  },
+  {
+   "id": "comms",
+   "title": "Item 7: Communications",
+   "kind": "do",
+   "narration": "Item seven is communications, in a PACE plan. Primary is JBCP: keep messages short, use callsigns, and acknowledge. Secondary, the alternate, is the radio on the frequency from the SOI. Tertiary, the contingency, is a cell phone group chat, which is not secure, so keep sensitive details off it and never text while driving. Add an emergency method from your SOP, and check every method before SP. Callsigns are Stampede plus the vehicle or position number.",
+   "onscreen": [
+    "Primary: JBC-P (short, professional)",
+    "Secondary (alternate): radio, frequency per SOI",
+    "Tertiary (contingency): cell group chat, not secure",
+    "A passenger texts, never the driver",
+    "Add an emergency method (not in this brief)",
+    "Callsign: Stampede + vehicle/position #"
+   ],
+   "ref": "March BA FTX 2025 (past exercise); SOI",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes",
+    "https://www.army.mil/article-amp/291213/rapid_support_signal_team_fortifies_network_capabilities",
+    "https://armytransportation.tpub.com/TR10098/TR100980046.htm",
+    "https://www.army.mil/article/168123/joint_battle_command_platform",
+    "https://www.army.mil/article/277274/logistics_evolution_at_the_national_training_center_sustainment_in_a_communications_constrained_environment"
+   ]
+  },
+  {
+   "id": "fuel",
+   "title": "Item 8: Fuel Cards and Fuel Points",
+   "kind": "do",
+   "narration": "Item eight is fuel cards, one with the Serial 1 commander and one with the Serial 2 commander. Sign for them, keep every receipt, and turn them in. At every fuel stop and halt, the custodian keeps the weapon under positive control, and its vehicle is never left unattended. Outbound, the fuel point is the Love's at checkpoint 6. On the return trip, it is the King of Prussia, or KOP, Travel Plaza on I-76 West.",
+   "onscreen": [
+    "Card 1: Serial 1 commander",
+    "Card 2: Serial 2 commander",
+    "Sign for cards, keep every receipt",
+    "Weapons/SI: never unattended at fuel or halts",
+    "Outbound fuel: Love's (CKPT 6)",
+    "Return fuel: KOP Travel Plaza, I-76 W"
+   ],
+   "ref": "March BA FTX 2025 (past exercise); AR 190-11",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes"
+   ]
+  },
+  {
+   "id": "route",
+   "title": "Item 9: Route and Strip Map",
+   "kind": "info",
+   "narration": "Item nine is the route and strip map. Serial 1 crosses the SP at the 733rd TC in Reading at 0730, and Serial 2 at 0800. Checkpoints 1 through 4 are I-176 South, I-76 East, I-276 East and I-95 North. Checkpoints 5 through 8 are Exit 7 to Route 206 South, the Love's fuel point, the JBMDL post gate, and the left turn onto Range Road. Serial 1 reaches the RP at about 1000, and Serial 2 at about 1030. Every vehicle carries a strip map marked with the halts and nearest hospitals.",
+   "onscreen": [
+    "SP: 733rd TC, Reading (S1 0730 / S2 0800)",
+    "CKPT 1-2: I-176 S, I-76 E",
+    "CKPT 3-4: I-276 E, I-95 N",
+    "CKPT 5-6: Exit 7 / 206 S, Love's fuel",
+    "CKPT 7-8: JBMDL gate, L on Range Rd",
+    "RP: S1 ~1000 / S2 ~1030"
+   ],
+   "ref": "March BA FTX 2025: past exercise, example only",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes",
+    "https://armystudyguide.com/content/powerpoint/convoy_operations_presentations/leading-a-convoy-2.shtml"
+   ]
+  },
+  {
+   "id": "xchecks",
+   "title": "Item 9: X-Checks",
+   "kind": "do",
+   "narration": "The brief also set three X-checks: the SP, the Delaware River, and the RP. At each one, every vehicle answers a roll call by callsign to its serial commander. The river is the state line, a landmark no one can miss. The CC confirms all 7 vehicles and 13 Soldiers across both serials, then reports to higher. Your SOP defines what an X-check includes.",
+   "onscreen": [
+    "X-check 1: SP",
+    "X-check 2: Delaware River",
+    "X-check 3: RP",
+    "Roll call by callsign, per serial",
+    "Serial CDR to CC, CC to higher",
+    "7 vehicles, 13 Soldiers (both serials)"
+   ],
+   "ref": "March BA FTX 2025 (past exercise); unit SOP",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes",
+    "https://www.globalsecurity.org/military/library/report/call/call_99-14_convoy.htm"
+   ]
+  },
+  {
+   "id": "march",
+   "title": "Item 9: Speed, Interval and Terrain",
+   "kind": "do",
+   "narration": "On the highway, this brief set intervals of 50 to 75 meters. March speed is 5 miles per hour below the posted limit, or lower if a TM or command cap requires it. If the rear falls behind, the lead slows, and the rear closes up at catch-up speed, the posted limit, never above a TM or SOP cap. Intervals vary by unit SOP, road and speed. Confirm yours, and open it up as speed rises and on wet roads.",
+   "onscreen": [
+    "Interval: 50-75 m (this brief)",
+    "Speed: 5 below posted, or TM/SOP cap",
+    "Lowest limit wins",
+    "Catch-up: posted limit, capped by TM/SOP",
+    "Interval per SOP: varies by road, speed",
+    "Open it up for speed and wet roads"
+   ],
+   "ref": "March BA FTX 2025 (past exercise); USARC Pam 56-1",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes",
+    "https://www.usar.army.mil/Portals/98/Documents/Publications/PAMS/Convoy%20Commanders%20Guide.pdf",
+    "https://www.globalsecurity.org/military/library/policy/army/fm/7-10/apph.htm"
+   ]
+  },
+  {
+   "id": "serials",
+   "title": "Item 9: Distance Between Serials",
+   "kind": "do",
+   "narration": "Serial 2 leaves the SP 30 minutes after Serial 1. If Serial 2 can see Serial 1, it is too close, so Serial 2 makes space. The gap keeps the serials from merging and lets each one clear the fuel point. The serial commanders manage that gap on comms.",
+   "onscreen": [
+    "Serial 2 SP: 30 minutes behind",
+    "Can see Serial 1? Make space",
+    "No merging into one long column",
+    "Each serial clears the fuel point",
+    "Serial commanders coordinate on comms"
+   ],
+   "ref": "March BA FTX 2025 (past exercise); ATP 4-11",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes",
+    "https://ops.fhwa.dot.gov/publications/fhwahop05029/appendix_b.htm"
+   ]
+  },
+  {
+   "id": "ccp",
+   "title": "Item 10: Convoy Contingency Plan",
+   "kind": "do",
+   "narration": "Item ten is the convoy contingency plan, and the recovery assets are tow bars. If a vehicle breaks down, the driver turns on the 4-ways, pulls safely off the road, and reports to the CC and ACC, who report up. West of KOP, the vehicle is recovered back to the unit. East of KOP, it is recovered forward to JBMDL to continue the mission. The crew sets out warning triangles per SOP, then waits well away from traffic, behind the guardrail if possible. Tow with a vehicle the same size or larger, chains on, per the TM. Put CLS-trained Soldiers and aid bags in each serial. For an accident or injury, call 9-1-1, render aid, report up, and hold the scene for the police report.",
+   "onscreen": [
+    "Recovery assets: tow bars",
+    "Breakdown: 4-ways, off the road, report",
+    "West of KOP: back to unit",
+    "East of KOP: recovered forward to JBMDL",
+    "Warning triangles out; crew clear of traffic",
+    "Tow: same size or larger, chains on (TM)",
+    "CLS + aid bags each serial; accident: 9-1-1, aid, report"
+   ],
+   "ref": "March BA FTX 2025 (past exercise); USARC Pam 56-1",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes",
+    "https://www.globalsecurity.org/military/library/policy/army/fm/3-07-22/ch6-ii.htm",
+    "https://armytransportation.tpub.com/TR10098/TR100980070.htm",
+    "https://www.usar.army.mil/Portals/98/Documents/Publications/PAMS/Convoy%20Commanders%20Guide.pdf",
+    "https://www.army.mil/article/173420"
+   ]
+  },
+  {
+   "id": "safety",
+   "title": "Item 11: Safety",
+   "kind": "do",
+   "narration": "Item eleven is safety. The weather line is filled in on brief day, so check the forecast and brief it. The road hazard is construction, so expect lane shifts, narrow lanes and sudden stops. Seat belts and headlights stay on, flags and signs go up per SOP, and drivers are rested. Assistant drivers, where assigned, stay awake, and no one lets a tired driver drive.",
+   "onscreen": [
+    "Weather: check forecast on brief day",
+    "Hazard: construction zones",
+    "Seat belts and headlights on",
+    "Convoy flags and signs per SOP",
+    "Rested drivers, alert assistant drivers",
+    "No tired driver behind the wheel"
+   ],
+   "ref": "March BA FTX 2025 (past exercise); AR 385-10",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes",
+    "https://home.army.mil/hawaii/download_file/4166/1455",
+    "https://www.army.mil/article-amp/173813/overcorrecting_and_rollovers_from_bad_to_worse",
+    "https://ops.fhwa.dot.gov/publications/fhwahop05029/appendix_b.htm",
+    "https://dmna.ny.gov/safety/memos/AT_Safety_2026.pdf"
+   ]
+  },
+  {
+   "id": "backbrief",
+   "title": "Item 12: Back-Brief",
+   "kind": "do",
+   "narration": "Item twelve is the back-brief and check on learning. Instead of asking whether everyone understands, call on specific Soldiers. What is Serial 2's SP time, and what is our secondary comms? Your truck breaks down east of KOP, so what do you do? Then serial commanders back-brief how they will run their serials, and the convoy rehearses the breakdown drill and comms check.",
+   "onscreen": [
+    "Serial 2 SP time?",
+    "0800, 30 minutes behind Serial 1.",
+    "Breakdown east of KOP?",
+    "4-ways, triangles, report. Recovered forward to JBMDL.",
+    "Serial commanders, back-brief your plan. Then we rehearse."
+   ],
+   "ref": "March BA FTX 2025 (past exercise); FM 5-0",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes",
+    "https://www.globalsecurity.org/military/library/report/call/call_98-5_rehears1.htm"
+   ]
+  },
+  {
+   "id": "execution",
+   "title": "Executing the Convoy",
+   "kind": "do",
+   "narration": "On mission day, line up in order of march, confirm accountability, and run a final comms check. Cross the SP on time, and report at each X-check or other SOP reporting point. The ACC makes sure no one is left behind. At halts, get fully off the road and check vehicles and people. At the RP, report closure, account for everyone and every sensitive item, and lead an AAR.",
+   "onscreen": [
+    "Line up, accountability, comms check",
+    "Cross SP on time",
+    "Report at each X-check / SOP reporting point",
+    "ACC: no one left behind",
+    "Halts: off the road, check vehicles",
+    "RP: closure report, accounting, AAR"
+   ],
+   "ref": "STP 21-24 task 551-721-4326; FM 7-0 (AARs)",
+   "sources": [
+    "https://armystudyguide.com/content/SMCT_CTT_Tasks/Skill_Levels_2_4/5517214326-sl4-perform-du.shtml",
+    "https://www.globalsecurity.org/military/library/report/call/call_99-14_convoy.htm",
+    "https://armytransportation.tpub.com/TR10098/TR100980070.htm",
+    "https://www.trngcmd.marines.mil/Portals/207/Docs/TBS/MCRP%204-11-3f%20Convoy%20Operations%20Handbook.pdf"
+   ]
+  },
+  {
+   "id": "casestudy",
+   "title": "Case Study: Unauthorized Driver Swap",
+   "kind": "info",
+   "narration": "This example comes from an Army safety article on DVIDS called Training Tragedy. A company convoyed 13 vehicles to training. After the brief, the crew of the third load handling truck swapped drivers without telling the convoy commander. The new driver was unlicensed and inexperienced on that truck. When the truck ahead stopped, the new driver could not stop in time and hit it at about 50 to 55 miles per hour, and the driver was killed. Enforce licensing and interval, make vehicle commanders own their trucks, and allow no unapproved driver swaps.",
+   "onscreen": [
+    "13-vehicle convoy to training",
+    "Driver swap after the brief",
+    "Convoy commander never told",
+    "New driver: unlicensed on that truck",
+    "Rear-end crash at 50-55 mph, driver killed",
+    "Enforce licensing, interval: no swaps"
+   ],
+   "ref": "DVIDS, \"Training Tragedy\" (2019)",
+   "sources": [
+    "https://dvidshub.net/news/311865/training-tragedy",
+    "https://www.gao.gov/products/gao-21-361"
+   ]
+  },
+  {
+   "id": "q1",
+   "title": "Knowledge Check 1 of 8",
+   "kind": "info",
+   "narration": "On the way to JBMDL, a truck breaks down east of KOP, so where does it go: A, back to the unit, B, on to JBMDL, or C, left in place until after the FTX? Answer: B, it is recovered forward to JBMDL.",
+   "onscreen": [
+    "Breakdown east of KOP (outbound)?",
+    "A. Back to the unit",
+    "B. On to JBMDL",
+    "C. Left in place until after the FTX"
+   ],
+   "quiz": {
+    "question": "On the way to JBMDL, a truck breaks down east of KOP. Where does it go?",
+    "choices": [
+     "Back to the unit",
+     "On to JBMDL",
+     "Left in place until after the FTX"
+    ],
+    "answer": "B"
+   },
+   "ref": "March BA FTX 2025: past exercise, example only",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes"
+   ]
+  },
+  {
+   "id": "q2",
+   "title": "Knowledge Check 2 of 8",
+   "kind": "info",
+   "narration": "In most unit SOPs, where does the ACC ride: A, in the CC's vehicle, B, in the lead vehicle, or C, toward the rear? Answer: C, toward the rear, never with the CC.",
+   "onscreen": [
+    "In most SOPs, where does the ACC ride?",
+    "A. In the CC's vehicle",
+    "B. In the lead vehicle",
+    "C. Toward the rear"
+   ],
+   "quiz": {
+    "question": "In most unit SOPs, where does the ACC ride?",
+    "choices": [
+     "In the CC's vehicle",
+     "In the lead vehicle",
+     "Toward the rear"
+    ],
+    "answer": "C"
+   },
+   "ref": "Unit SOP; CALL",
+   "sources": [
+    "https://www.scribd.com/document/468236176/us-call-4-24-2004-pdf",
+    "https://armymilitarypolice.tpub.com/mp1007c/Coordinate-With-Convoy-Commander-55.htm"
+   ]
+  },
+  {
+   "id": "q3",
+   "title": "Knowledge Check 3 of 8",
+   "kind": "info",
+   "narration": "Who carries the fuel cards in this brief: A, the CC, B, each serial commander, or C, every driver? Answer: B, each serial commander.",
+   "onscreen": [
+    "Who carries the fuel cards?",
+    "A. The CC",
+    "B. Each serial commander",
+    "C. Every driver"
+   ],
+   "quiz": {
+    "question": "In this brief, who carries the fuel cards?",
+    "choices": [
+     "The CC",
+     "Each serial commander",
+     "Every driver"
+    ],
+    "answer": "B"
+   },
+   "ref": "March BA FTX 2025: past exercise, example only",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes"
+   ]
+  },
+  {
+   "id": "q4",
+   "title": "Knowledge Check 4 of 8",
+   "kind": "info",
+   "narration": "Which form is the Deliberate Risk Assessment Worksheet: A, DD Form 1265, B, DD Form 2977, or C, DA Form 5988-E? Answer: B, DD Form 2977.",
+   "onscreen": [
+    "Deliberate Risk Assessment Worksheet?",
+    "A. DD Form 1265",
+    "B. DD Form 2977",
+    "C. DA Form 5988-E"
+   ],
+   "quiz": {
+    "question": "Which form is the Deliberate Risk Assessment Worksheet?",
+    "choices": [
+     "DD Form 1265",
+     "DD Form 2977",
+     "DA Form 5988-E"
+    ],
+    "answer": "B"
+   },
+   "ref": "ATP 5-19; DD Form 2977",
+   "sources": [
+    "https://www.esd.whs.mil/Directives/forms/dd2500_2999/DD2977"
+   ]
+  },
+  {
+   "id": "q5",
+   "title": "Knowledge Check 5 of 8",
+   "kind": "info",
+   "narration": "In this brief, what is catch-up speed: A, 5 over the limit, B, the posted limit, or C, whatever it takes? Answer: B, the posted limit, capped by any TM or command limit.",
+   "onscreen": [
+    "What is the catch-up speed?",
+    "A. 5 mph over the limit",
+    "B. The posted limit",
+    "C. Whatever it takes"
+   ],
+   "quiz": {
+    "question": "In this brief, what is catch-up speed?",
+    "choices": [
+     "5 mph over the limit",
+     "The posted limit",
+     "Whatever it takes"
+    ],
+    "answer": "B"
+   },
+   "ref": "March BA FTX 2025 (past exercise); USARC Pam 56-1",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes",
+    "https://www.usar.army.mil/Portals/98/Documents/Publications/PAMS/Convoy%20Commanders%20Guide.pdf"
+   ]
+  },
+  {
+   "id": "q6",
+   "title": "Knowledge Check 6 of 8",
+   "kind": "info",
+   "narration": "Which form requests convoy clearance: A, DD Form 1265, B, DD Form 1266, or C, DD Form 2977? Answer: A, DD Form 1265.",
+   "onscreen": [
+    "Which form requests convoy clearance?",
+    "A. DD Form 1265",
+    "B. DD Form 1266",
+    "C. DD Form 2977"
+   ],
+   "quiz": {
+    "question": "Which form requests convoy clearance?",
+    "choices": [
+     "DD Form 1265",
+     "DD Form 1266",
+     "DD Form 2977"
+    ],
+    "answer": "A"
+   },
+   "ref": "DTR 4500.9-R Part III",
+   "sources": [
+    "https://www.esd.whs.mil/Directives/forms/dd1000_1499/DD1265",
+    "https://www.esd.whs.mil/Directives/forms/dd1000_1499/DD1266/"
+   ]
+  },
+  {
+   "id": "q7",
+   "title": "Knowledge Check 7 of 8",
+   "kind": "info",
+   "narration": "Serial 2 can see Serial 1, so what does Serial 2 do: A, close up and join, B, pass, or C, make space? Answer: C, make space and coordinate on comms.",
+   "onscreen": [
+    "Serial 2 can see Serial 1. Now what?",
+    "A. Close up and join Serial 1",
+    "B. Pass Serial 1",
+    "C. Make space"
+   ],
+   "quiz": {
+    "question": "Serial 2 can see Serial 1. What does Serial 2 do?",
+    "choices": [
+     "Close up and join Serial 1",
+     "Pass Serial 1",
+     "Make space"
+    ],
+    "answer": "C"
+   },
+   "ref": "March BA FTX 2025: past exercise, example only",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes"
+   ]
+  },
+  {
+   "id": "q8",
+   "title": "Knowledge Check 8 of 8",
+   "kind": "info",
+   "narration": "Before SP, whose licensing must the CC confirm: A, only the lead driver, B, every driver, on their vehicle, or C, only the CC and ACC? Answer: B, every driver, on their vehicle.",
+   "onscreen": [
+    "Whose licensing does the CC confirm?",
+    "A. Only the lead driver",
+    "B. Every driver, on their vehicle",
+    "C. Only the CC and ACC"
+   ],
+   "quiz": {
+    "question": "Before SP, whose licensing must the CC confirm?",
+    "choices": [
+     "Only the lead driver",
+     "Every driver, on their vehicle",
+     "Only the CC and ACC"
+    ],
+    "answer": "B"
+   },
+   "ref": "AR 600-55; USARC Pam 56-1",
+   "sources": [
+    "https://home.army.mil/hood/9617/6903/4948/POLICY_LETTER_17_Driver_and_Operator_Program.pdf",
+    "https://www.usar.army.mil/Portals/98/Documents/Publications/PAMS/Convoy%20Commanders%20Guide.pdf",
+    "https://dvidshub.net/news/311865/training-tragedy"
+   ]
+  },
+  {
+   "id": "summary",
+   "title": "Recap",
+   "kind": "info",
+   "narration": "To recap, the CC leads the convoy, and the ACC is ready to take command. Your commander designates both, and your SOP sets the requirements. Brief all twelve items, enforce the standards, and close every mission with an AAR.",
+   "onscreen": [
+    "CC: leads the convoy",
+    "ACC: ready to take command",
+    "Commander designates; SOP sets rank",
+    "Brief all 12 items",
+    "Enforce licensing, speed, interval",
+    "Finish every mission with an AAR"
+   ],
+   "ref": "Unit SOP",
+   "sources": [
+    "March BA FTX 2025 convoy brief notes"
+   ]
+  },
+  {
+   "id": "end",
+   "title": "References",
+   "kind": "info",
+   "narration": "Check each edition of these references, the DTR Part III appendix and your 733rd TC SOP before you teach. Plan it, brief it, lead it, and bring every Soldier home.",
+   "onscreen": [
+    "ATP 4-11, Army Motor Transport Operations",
+    "ATP 4-01.45, Tactical Convoy Operations",
+    "DTR 4500.9-R Part III; USARC Pam 56-1",
+    "ATP 5-19 (DD 2977), AR 600-55",
+    "AR 385-10, AR 190-11, 733rd TC SOP"
+   ],
+   "ref": "References",
+   "sources": [
+    "https://www.globalsecurity.org/military/library/policy/army/atp/index.html",
+    "https://www.alssa.mil/mttps/tco",
+    "https://webarchive.library.unt.edu/web/20130218002118/http:/www.transcom.mil/dtr/part-iii/dtr_part_iii_app_f.pdf",
+    "https://www.usar.army.mil/Portals/98/Documents/Publications/PAMS/Convoy Commanders Guide.pdf",
+    "https://www.esd.whs.mil/Directives/forms/dd2500_2999/DD2977"
+   ]
+  }
+ ],
+ "caveats_for_instructor": [
+  "Instructor-only notes. Keep these out of the rendered video and any public notes page.",
+  "Length and structure: the narration is now about 1,896 words, down from about 2,175. The converter's automatic quiz intro adds about 20 more. Expect roughly 12 to 13 minutes with the quiz holds, but time one real render. All 32 scene ids are kept. The three item-9 scenes are retitled 'Item 9: ...'. The q8 question now tests driver licensing instead of where the CC/ACC rules come from. q1 choice C is now 'left in place until after the FTX'. The q4 form title (Deliberate Risk Assessment Worksheet) is now taught in the risk scene.",
+  "Quiz pause: every quiz keeps exactly two sentences because make_scenes.py holds 4 seconds after sentence 1 and adds a quiz intro that tells viewers to pause the video. A reviewer asked for 5 seconds. If you want that, change pause_after to 5.0.",
+  "OPSEC (the video will be public): the example is framed as a past exercise, and the ref badge on every worked-example scene says so. The video still shows the route, the SP and RP times, the fuel points, the JBMDL gate, the Range Rd turn and the Stampede callsign. Get written approval from the unit OPSEC officer before posting. If approval is not given, use relative times on screen (Serial 1 at H-hour, Serial 2 at H+30, RP about 2.5 hours after SP), and change the back-brief question to 'How long after Serial 1 does Serial 2 cross the SP?'.",
+  "OPSEC, weapon: the critical review asked for the notes' 'M4A1 in LMTV' link to be removed, so neither the narration nor the screen says which truck carries the weapon. Brief that only in the closed classroom. Production: the column graphic in sim/convoy/body.part (the MARCH array, shown in the roles scene) labels an LMTV 'Weapons / SI'. Remove that label before rendering.",
+  "Requirements: no Army-wide minimum rank for a CC or ACC was found, so the video says the commander designates them and the unit SOP sets rank and certification. Confirm the 733rd TC and higher-HQ policy, including whether appointment must be in writing. 'The CC may be an officer or an NCO, depending on convoy size' comes from MP manuals. The 454th TC (80 out of 100) and 541st TC examples come from DVIDS and army.mil.",
+  "Crew plan: 13 personnel in 7 vehicles means at least one truck has only one person. The video therefore says 'vehicle commander or senior occupant' and 'assistant drivers, where assigned'. Confirm the actual crew plan.",
+  "Convoy clearance: 7 vehicles meets the 6-vehicle convoy definition, but the brief says clearance was not necessary. State the actual basis in class, for example each serial has fewer than 6 vehicles and fewer than 10 vehicles move per hour, or the S3 or DMC ruled on it. Confirm that requests go to the DMC of the state where the move starts, and the current lead times. Check loaded PLS gross and axle weights against PA and NJ limits to see whether a DD 1266 is needed.",
+  "Interval: the brief's 50-75 m is much shorter than the USARC Pam 56-1 (1997) highway figures. The research shows 150-200 m; one reviewer cites 200 m on controlled-access highways and 50 m in urban areas. Confirm the guide's exact figures and your SOP. Sources disagree on intervals at night and in towns (close column at night in tactical moves, tighter intervals in towns to stop cut-ins), so the narration leaves both to the SOP. The notes' truck-length parenthetical was left out on purpose because it does not match 50-75 m.",
+  "Speed: '5 below' is read as 5 mph below the posted limit. Check the TM maximum speeds for the PLS and LMTV (one reviewer believes they top out in the upper 50s mph) and any command convoy speed limit. On the Turnpike, the cap rather than the posted sign will probably set the speed, and march speed must stay below the cap so a truck can still catch up.",
+  "X-check: read as a roll call by callsign in each serial, then serial commanders report to the CC and the CC reports to higher. Confirm this is what the unit means.",
+  "KOP breakdown rule: the notes give no direction of travel, so the CCP scene presents it as a geographic split, and q1 uses an outbound case. Brief how the rule applies on the return trip. 'Recovered forward' means towed or otherwise recovered, not driven while disabled.",
+  "Fuel points: the notes say 'KOP Travel Plaza on I-76 West'. A reviewer believes the King of Prussia service plaza is on the westbound PA Turnpike near milepost 328, on the I-276 segment. Verify the name, the location and diesel availability, and the location of the Love's, before showing them as fact. If they are wrong, fix both the screen and the narration. Also confirm that both fuel points accept the unit's fuel card.",
+  "Weather: the notes' weather line was blank. The video says it is filled in on brief day. Brief the real forecast.",
+  "Comms: the emergency method is a PACE teaching addition, and the screen says it was not in this brief. The system's official name is JBC-P. Confirm JBC-P is actually installed on the trucks used. Production: the comms renderer hard-codes 'JBCP' and 'Last resort' and does not draw the bullet list. Update it if you want the new text on screen.",
+  "ACC position and duties come from CALL and convoy battle books (one source puts the ACC mid-column), not a single doctrinal list. Confirm in the SOP where the CC and ACC ride, which serial each leader rides with, who leads the trail, and the order of succession after the ACC.",
+  "Prep: 'usually known weeks out' reflects Battle Assembly planning. The 1/3-2/3 rule is from TLP doctrine. The old line 'higher gets the manifest before SP' was removed. CALL guidance says 2 hours before SP, so apply your SOP.",
+  "Risk: who signs the DD 2977, and at which risk level, is set by command policy. The notes say only 'Low', so the screen says 'risk assessed LOW'. Production: the risk renderer hard-codes the tag 'RESIDUAL RISK (MARCH BA FTX): LOW'. Change it to 'RISK ASSESSED: LOW'.",
+  "Medical and accident plan: the CLS Soldiers, aid bags, hospitals on the strip map, 9-1-1, police report and accident forms are teaching additions, not in the notes. Fill in the real CLS assignments and hospitals, and confirm which accident forms the dispatch packet holds (for example SF 91).",
+  "Breakdown: place the warning triangles per your SOP and state law (49 CFR 392.22 is the civilian baseline). Verify the towing rule (towing vehicle the same size or larger, safety chains on) against the PLS and LMTV TMs, and confirm the tow bars fit both vehicle types.",
+  "Military license: under AR 600-55 this is the operator permit record. Confirm the current form (DA Form 5984-E or OF 346) against the 2025 edition.",
+  "Case study: the details come from search snippets of the DVIDS article 'Training Tragedy' (lead truck stopped, third truck hit the vehicle ahead). Read the full article before class.",
+  "Safety basics: the rest controls and the flag and sign guidance come from ARNG memos and older Army guidance. Flag and sign colors are left to the SOP because sources conflict. Confirm against current USAR safety guidance.",
+  "References: check that each is current on armypubs and on the USTRANSCOM DTR site. That covers ATP 4-11 (2013), USARC Pam 56-1 (1997), the DTR Part III appendix letter (only the 2012 edition was seen), AR 600-55 (a 2025 edition is cited), ATP 4-01.45 (2021) and FM 55-30 (legacy). AAR guidance now cites FM 7-0 instead of TC 25-20, and FM 3-07.22 was dropped as a reference for roles.",
+  "Pronunciation: the narration keeps standard written forms because it doubles as the on-screen captions, and the SAY rules in build_audio.py already handle the form numbers, highways, times, 733rd, KOP, SOI and similar terms. Add SAY rules if Kokoro misreads '541st', '454th', 'ID tags' or '9-1-1'. 'Dash ten TM' is written out.",
+  "Production layout: the back-brief bullets are question-and-answer pairs because that renderer alternates 'CC:' and 'Driver:' labels. The requirements, pcc and roles scenes keep 6, 5 and 5 bullets so they do not collide with the caption box. The title renderer does not draw on-screen lines, so the 'past exercise' framing appears only in the narration and the ref badges unless you add it to that renderer. The march renderer's 'POSTED − 5' and 'POSTED LIMIT' panels should say that a TM or SOP cap applies.",
+  "The unclear third vehicle-type word in the notes was left out. The radio frequency and all Soldier names are left out everywhere."
+ ]
+}
