@@ -3,7 +3,7 @@
 import json, os, re
 D = os.path.dirname(os.path.abspath(__file__))
 RENDERERS = {'title', 'roles', 'requirements', 'prep', 'agenda', 'intro', 'pcc', 'risk', 'manifest', 'clearance', 'comms',
-             'fuel', 'route', 'xchecks', 'march', 'serials', 'ccp', 'safety', 'backbrief', 'execution', 'quizintro', 'summary', 'end'}
+             'fuel', 'route', 'xchecks', 'march', 'serials', 'ccp', 'safety', 'backbrief', 'execution', 'quizintro', 'summary', 'end', 'casestudy'}
 script = json.load(open(os.path.join(D, 'script.json')))
 scenes, quiz = [], [s for s in script['scenes'] if s.get('quiz') or re.fullmatch(r'q\d+', s['id'])]
 nq = len(quiz)

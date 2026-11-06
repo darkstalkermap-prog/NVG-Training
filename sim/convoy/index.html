@@ -33,8 +33,10 @@ function bullets() { return (SC.onscreen || []).filter(Boolean); }
 function speechSpan() { const n = SC.sentences.length; return [sStart(0), sEnd(n - 1)]; }
 // time at which bullet i of n should appear: spread across the narration
 function bulletAt(i, n) { const [a, b] = speechSpan(); return a + 0.6 + i * Math.max(0.8, (b - a - 1.2) / Math.max(1, n)); }
-function checklist(x, y, items, w = 480, size = 21, gap = 56, startI = 0, total = null) {
+function checklist(x, y, items, w = 480, size = 21, gap = 56, startI = 0, total = null, maxY = 560) {
   const n = total ?? items.length;
+  if (items.length > 1) gap = Math.min(gap, (maxY - y) / (items.length - 1));
+  if (gap < 50) size = Math.min(size, 19);
   items.forEach((s, i) => { const a = reveal(bulletAt(i + startI, n), 0.4); const lines = wrap(s, w - 50, size, 500); const yy = y + i * gap;
     ctx.globalAlpha = 0.25 + 0.75 * a; ctx.strokeStyle = '#3c7a4b'; ctx.lineWidth = 2; ctx.strokeRect(x, yy - 20, 28, 28); ctx.globalAlpha = 1;
     if (a > 0) { ctx.globalAlpha = a; check(x + 14, yy - 6, 24); ctx.globalAlpha = 1; }
@@ -63,7 +65,7 @@ function hazard(x, y, on) { if (!on) return; ctx.fillStyle = '#ffbf3c'; ctx.shad
 
 // Illustrative 7-vehicle order of march (types per notes: PLS and LMTV; split and order are illustrative only)
 const MARCH = [
-  { t: 'pls', s: 1, role: 'Serial 1 cmdr' }, { t: 'pls', s: 1 }, { t: 'lmtv', s: 1, role: 'Weapons / SI' }, { t: 'pls', s: 1 },
+  { t: 'pls', s: 1, role: 'Serial 1 cmdr' }, { t: 'pls', s: 1 }, { t: 'lmtv', s: 1 }, { t: 'pls', s: 1 },
   { t: 'pls', s: 2, role: 'Serial 2 cmdr' }, { t: 'pls', s: 2 }, { t: 'lmtv', s: 2, role: 'ACC (trail)' },
 ];
 // draw the column right-to-left starting at front x; returns list of vehicle centres
@@ -125,7 +127,7 @@ function stripMap(o = {}) {
     ROUTE.filter(p => !p.river && !p.marker).forEach((p, i) => { const y = 192 + i * 38, on = prog >= routeFracOf(p.k) - 0.002, a = o.legendReveal ? o.legendReveal(i) : 1;
       text(p.n, 84, y, 15, on ? GREEN : '#9dbba2', 900, 'center', a); text(p.name, 116, y, 17, on ? '#eaffef' : '#c9e8cd', on ? 700 : 500, 'left', a); if (p.time) text(p.time, 440, y, 15, AMBER, 800, 'right', a); });
   }
-  text('Schematic, not to scale. Use the issued strip map.', 1240, 690 - 52, 12, '#7f9a84', 600, 'right');
+  text('Schematic, not to scale. Use the issued strip map.', 40, 612, 12, '#7f9a84', 600, 'left');
 }
 function convoyDot(f, col = '#eaffef', lab = '') { const p = routePoint(clamp(f, 0, 1)); ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 14; ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, 7); ctx.fill(); ctx.shadowBlur = 0; if (lab) text(lab, p.x + 14, p.y - 12, 12, col, 900, 'left'); return p; }
 
@@ -134,7 +136,7 @@ function cardsScene(title, opts = {}) {
   mapBG(); const items = bullets();
   if (opts.left) opts.left();
   const x = opts.left ? 660 : 160, w = opts.left ? 560 : 960;
-  panel(x - 30, 120, w + 40, Math.max(200, items.length * 64 + 100));
+  panel(x - 30, 120, w + 40, 460);
   heading(title, x, 168, 24);
   checklist(x, 228, items, w, 21, 64);
 }
@@ -149,19 +151,20 @@ const SCENES = {
     text('Convoy Commander', 86, 256, 66, '#eaffef', 900, 'left', a);
     text('& Assistant Convoy Commander', 88, 318, 40, '#c9e8cd', 800, 'left', a);
     text('Requirements · Preparation · The convoy brief · Execution', 90, 362, 21, '#9dbba2', 600, 'left', a);
+    text('Worked example: March BA FTX 2025 (past training exercise)', 90, 396, 18, AMBER, 700, 'left', a);
   },
 
   roles(t, d) {
-    mapBG(); roadBand(330, 110, 0);
-    const ppm = 7.0, cols = column(1230, 330, ppm, 8, 30);
+    mapBG(); roadBand(310, 110, 0);
+    const ppm = 7.0, cols = column(1230, 310, ppm, 8, 30);
     const n = bullets().length;
     // serial brackets
-    for (const s of [1, 2]) { const vs = cols.filter(v => v.s === s); const x1 = vs.at(-1).rear, x2 = vs[0].x; const a = reveal(bulletAt(0, n) + (s - 1) * 1.2); ctx.globalAlpha = a; ctx.strokeStyle = s === 1 ? GREEN : BLUE; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x1, 395); ctx.lineTo(x1, 410); ctx.lineTo(x2, 410); ctx.lineTo(x2, 395); ctx.stroke(); ctx.globalAlpha = 1; text(`SERIAL ${s}`, (x1 + x2) / 2, 436, 18, s === 1 ? GREEN : BLUE, 900, 'center', a); }
-    text('CONVOY  (7 vehicles · 13 personnel · illustrative order)', 640, 200, 18, '#c9e8cd', 800, 'center');
+    for (const s of [1, 2]) { const vs = cols.filter(v => v.s === s); const x1 = vs.at(-1).rear, x2 = vs[0].x; const a = reveal(bulletAt(0, n) + (s - 1) * 1.2); ctx.globalAlpha = a; ctx.strokeStyle = s === 1 ? GREEN : BLUE; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x1, 375); ctx.lineTo(x1, 390); ctx.lineTo(x2, 390); ctx.lineTo(x2, 375); ctx.stroke(); ctx.globalAlpha = 1; text(`SERIAL ${s}`, (x1 + x2) / 2, 416, 18, s === 1 ? GREEN : BLUE, 900, 'center', a); }
+    text('CONVOY  (7 vehicles · 13 personnel · illustrative order)', 640, 170, 18, '#c9e8cd', 800, 'center');
     const roleA = reveal(bulletAt(1, n));
-    cols.forEach(v => { if (!v.role) return; const col = v.role.startsWith('ACC') ? AMBER : '#eaffef'; ctx.globalAlpha = roleA; ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(v.cx, 300); ctx.lineTo(v.cx, 262); ctx.stroke(); ctx.globalAlpha = 1; text(v.role, v.cx, 254, 15, col, 800, 'center', roleA); });
+    cols.forEach(v => { if (!v.role) return; const col = v.role.startsWith('ACC') ? AMBER : '#eaffef'; ctx.globalAlpha = roleA; ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(v.cx, 280); ctx.lineTo(v.cx, 242); ctx.stroke(); ctx.globalAlpha = 1; text(v.role, v.cx, 234, 15, col, 800, 'center', roleA); });
     // bullets as captions below
-    const items = bullets(); items.forEach((s, i) => { const a = reveal(bulletAt(i, items.length), 0.4); text('•  ' + s, 120, 500 + i * 30, 19, '#d8f5dc', 600, 'left', a); });
+    const items = bullets(); items.forEach((s, i) => { const a = reveal(bulletAt(i, items.length), 0.4); const col = i < 3 ? 0 : 1, row = i % 3; text('•  ' + s, 90 + col * 580, 470 + row * 36, 19, '#d8f5dc', 600, 'left', a); });
   },
 
   requirements(t, d) { cardsScene('Requirements', { left: () => { const a = reveal(0.3); ctx.globalAlpha = a; panel(70, 150, 500, 380); ctx.globalAlpha = 1;
@@ -187,7 +190,7 @@ const SCENES = {
     ctx.strokeStyle = 'rgba(210,90,90,0.5)'; ctx.beginPath(); ctx.moveTo(260, 70); ctx.lineTo(260, 680); ctx.stroke();
     text('CONVOY BRIEF · MARCH BA FTX 2025', 640, 118, 26, '#1b1b1b', 900, 'center');
     const items = ['Introduction', 'Paper + writing utensil', "PCCs + PCIs", 'Risk assessment', 'Convoy manifest', 'Convoy clearance', 'Communications', 'Fuel cards', 'Route', 'Convoy contingency plan', 'Safety', 'Back-brief / check on learning'];
-    items.forEach((s, i) => { const col = i < 6 ? 0 : 1, row = i % 6, x = 290 + col * 400, y = 168 + row * 72; const a = reveal(0.4 + i * Math.max(0.35, (sEnd(SC.sentences.length - 1) - 1) / 13), 0.3); text(`${i + 1}. ${s}`, x, y + 20, 25, '#1b1b1b', 700, 'left', a); });
+    items.forEach((s, i) => { const col = i < 6 ? 0 : 1, row = i % 6, x = 280 + col * 380, y = 168 + row * 72; const a = reveal(0.4 + i * Math.max(0.35, (sEnd(SC.sentences.length - 1) - 1) / 13), 0.3); text(`${i + 1}. ${s}`, x, y + 20, 23, '#1b1b1b', 700, 'left', a); });
     ctx.restore();
   },
 
@@ -198,15 +201,16 @@ const SCENES = {
     const soldier = ['ID tags', 'Civilian license', 'Military license', 'CAC', 'ACH', 'Gloves', 'Water source'];
     panel(60, 110, 540, 520); heading('Soldier (PCC / PCI)', 90, 156, 24);
     soldier.forEach((s, i) => { const a = reveal(0.6 + i * 0.55, 0.3); const y = 214 + i * 56; ctx.strokeStyle = '#3c7a4b'; ctx.lineWidth = 2; ctx.strokeRect(92, y - 20, 28, 28); if (a > 0) { ctx.globalAlpha = a; check(106, y - 6, 24); ctx.globalAlpha = 1; } text(s, 136, y, 22, '#d8f5dc', 600, 'left', 0.35 + 0.65 * a); });
-    panel(640, 110, 580, 520); heading('From the brief + vehicle', 670, 156, 24);
-    checklist(670, 214, items, 520, 20, 66);
+    panel(640, 110, 580, 520); heading('Leaders also check', 670, 156, 24);
+    const rest = items.filter(s => !/ID tags|Civilian and military/i.test(s));
+    checklist(670, 214, rest, 520, 20, 70, items.length - rest.length, items.length);
   },
 
   risk(t, d) {
     mapBG(); const items = bullets(), n = items.length;
     panel(60, 110, 1160, 470); heading('Deliberate risk assessment (DD Form 2977)', 90, 156, 24);
-    items.forEach((s, i) => { const a = reveal(bulletAt(i, n), 0.4), y = 220 + i * 62; ctx.globalAlpha = a; ctx.fillStyle = i % 2 ? 'rgba(93,255,122,0.06)' : 'rgba(93,255,122,0.03)'; ctx.fillRect(84, y - 30, 1112, 54); ctx.globalAlpha = 1; text(s, 110, y + 4, 21, '#eaffef', 600, 'left', a); });
-    const ra = reveal(sEnd(SC.sentences.length - 1) - 2.5, 0.4); tag('RESIDUAL RISK (MARCH BA FTX): LOW', 640, 620, GREEN, ra, 22);
+    items.forEach((s, i) => { const a = reveal(bulletAt(i, n), 0.4), y = 214 + i * 54; ctx.globalAlpha = a; ctx.fillStyle = i % 2 ? 'rgba(93,255,122,0.06)' : 'rgba(93,255,122,0.03)'; ctx.fillRect(84, y - 30, 1112, 48); ctx.globalAlpha = 1; text(s, 110, y + 4, 21, '#eaffef', 600, 'left', a); });
+    const ra = reveal(sStart(Math.min(3, SC.sentences.length - 1)), 0.4); tag('MARCH BA FTX: RISK ASSESSED LOW', 640, 552, GREEN, ra, 20);
   },
 
   manifest(t, d) {
@@ -221,18 +225,22 @@ const SCENES = {
   clearance(t, d) {
     mapBG(); const items = bullets(), n = items.length;
     const boxes = items.slice(0, 4);
-    boxes.forEach((s, i) => { const a = reveal(bulletAt(i, n), 0.4), x = 80 + i * 290, y = 230; ctx.globalAlpha = a; panel(x, y, 250, 170); ctx.globalAlpha = 1; wrap(s, 220, 20, 700).forEach((l, k) => text(l, x + 125, y + 60 + k * 26, 20, i === boxes.length - 1 ? GREEN : '#eaffef', 700, 'center', a)); if (i < boxes.length - 1) { ctx.globalAlpha = a; ctx.fillStyle = '#2f7a42'; ctx.beginPath(); ctx.moveTo(x + 258, y + 75); ctx.lineTo(x + 280, y + 85); ctx.lineTo(x + 258, y + 95); ctx.fill(); ctx.globalAlpha = 1; } });
+    boxes.forEach((s, i) => { const a = reveal(bulletAt(i, n), 0.4), x = 80 + i * 290, y = 230; ctx.globalAlpha = a; panel(x, y, 250, 170); ctx.globalAlpha = 1; wrap(s, 220, 19, 700).forEach((l, k) => text(l, x + 125, y + 50 + k * 25, 19, /March/.test(s) ? GREEN : '#eaffef', 700, 'center', a)); if (i < boxes.length - 1) { ctx.globalAlpha = a; ctx.fillStyle = '#2f7a42'; ctx.beginPath(); ctx.moveTo(x + 258, y + 75); ctx.lineTo(x + 280, y + 85); ctx.lineTo(x + 258, y + 95); ctx.fill(); ctx.globalAlpha = 1; } });
     heading('Convoy clearance', 80, 170, 28);
-    if (items.length > 4) items.slice(4).forEach((s, i) => text('•  ' + s, 100, 470 + i * 34, 19, '#c9e8cd', 600, 'left', reveal(bulletAt(4 + i, n))));
+    if (items.length > 4) items.slice(4).forEach((s, i) => text('•  ' + s, 100, 460 + i * 36, 20, /March/.test(s) ? GREEN : '#c9e8cd', 700, 'left', reveal(bulletAt(4 + i, n))));
   },
 
   comms(t, d) {
-    mapBG(); heading('Communications', 90, 150, 28);
-    const tiers = [['PRIMARY', 'JBCP', 'Etiquette on the system', GREEN], ['SECONDARY', 'Radio', 'Frequency from the SOI', BLUE], ['TERTIARY', 'Cell phone group chat', 'Last resort', AMBER]];
-    const n = SC.sentences.length;
-    tiers.forEach(([lvl, what, note, col], i) => { const a = reveal(sStart(Math.min(i + 1, n - 1)) - 0.2, 0.4), y = 200 + i * 120; ctx.globalAlpha = a; panel(90, y, 640, 100); ctx.fillStyle = col; ctx.fillRect(90, y, 10, 100); ctx.globalAlpha = 1; text(lvl, 124, y + 36, 16, col, 900, 'left', a); text(what, 124, y + 72, 28, '#eaffef', 800, 'left', a); text(note, 700, y + 60, 17, '#9dbba2', 600, 'right', a); });
-    const ca = reveal(sStart(n - 1), 0.4); ctx.globalAlpha = ca; panel(800, 230, 400, 200, 'rgba(10,40,18,0.95)', 'rgba(93,255,122,0.6)'); ctx.globalAlpha = 1;
-    text('CALLSIGN', 1000, 284, 18, '#9dbba2', 900, 'center', ca); text('"STAMPEDE __"', 1000, 344, 38, '#eaffef', 900, 'center', ca); text('+ vehicle / position number', 1000, 390, 16, '#9dbba2', 600, 'center', ca);
+    mapBG(); heading('Communications (PACE)', 90, 150, 28);
+    const items = bullets(), n = items.length;
+    const tiers = [[/^primary/i, 'PRIMARY', GREEN], [/^secondary/i, 'SECONDARY / ALTERNATE', BLUE], [/^tertiary/i, 'TERTIARY / CONTINGENCY', AMBER]];
+    let y = 190;
+    tiers.forEach(([re, lvl, col]) => { const i = items.findIndex(s => re.test(s)); if (i < 0) return; const a = reveal(bulletAt(i, n), 0.4); const body = items[i].replace(/^[^:]*:\s*/, '');
+      ctx.globalAlpha = a; panel(90, y, 700, 92); ctx.fillStyle = col; ctx.fillRect(90, y, 10, 92); ctx.globalAlpha = 1; text(lvl, 124, y + 32, 15, col, 900, 'left', a); text(body, 124, y + 68, 24, '#eaffef', 800, 'left', a); y += 106; });
+    items.forEach((s, i) => { if (tiers.some(([re]) => re.test(s)) || /callsign/i.test(s)) return; const a = reveal(bulletAt(i, n), 0.4); text('•  ' + s, 110, y + 26, 18, '#c9e8cd', 600, 'left', a); y += 30; });
+    const ci = items.findIndex(s => /callsign/i.test(s)), ca = reveal(ci >= 0 ? bulletAt(ci, n) : sStart(SC.sentences.length - 1), 0.4);
+    ctx.globalAlpha = ca; panel(840, 220, 380, 200, 'rgba(10,40,18,0.95)', 'rgba(93,255,122,0.6)'); ctx.globalAlpha = 1;
+    text('CALLSIGN', 1030, 274, 18, '#9dbba2', 900, 'center', ca); text('"STAMPEDE __"', 1030, 334, 36, '#eaffef', 900, 'center', ca); text('+ vehicle / position number', 1030, 380, 16, '#9dbba2', 600, 'center', ca);
   },
 
   fuel(t, d) {
@@ -241,9 +249,10 @@ const SCENES = {
     const a1 = reveal(sStart(Math.min(1, n - 1)), 0.4), a2 = reveal(sStart(n - 1), 0.4);
     ctx.globalAlpha = a1; glow(ctx, lv.x, lv.y, 46, '93,255,122', 0.9); ctx.globalAlpha = 1; tag("OUTBOUND: LOVE'S (CKPT 6)", lv.x - 30, lv.y - 62, GREEN, a1, 15);
     ctx.globalAlpha = a2; glow(ctx, kp.x, kp.y, 46, '255,191,60', 0.9); ctx.globalAlpha = 1; tag('RETURN: KOP TRAVEL PLAZA, I-76 W', kp.x, kp.y + 70, AMBER, a2, 15);
-    const ca = reveal(0.4); panel(40, 120, 420, 420); text('FUEL CARDS', 250, 160, 18, '#9dbba2', 900, 'center', ca);
+    const ca = reveal(0.4); panel(40, 120, 420, 470); text('FUEL CARDS', 250, 160, 18, '#9dbba2', 900, 'center', ca);
     for (let i = 0; i < 2; i++) { const x = 80, y = 190 + i * 160; ctx.globalAlpha = ca; ctx.fillStyle = '#d8d2b8'; roundRect(x, y, 340, 130, 14); ctx.fill(); ctx.fillStyle = '#c9a646'; ctx.fillRect(x + 24, y + 30, 48, 36); ctx.globalAlpha = 1;
       text(`SERIAL ${i + 1}`, x + 100, y + 50, 22, '#2b2a22', 900, 'left', ca); text('Carried by the serial commander', x + 100, y + 78, 14, '#5d5a4a', 700, 'left', ca); text('Signed out · accounted for', x + 100, y + 100, 14, '#5d5a4a', 700, 'left', ca); }
+    const extra = bullets().filter(s => /receipt|unattended|Weapons/i.test(s)); extra.forEach((s, i) => text('•  ' + s, 64, 520 + i * 28, 16, '#c9e8cd', 700, 'left', reveal(sStart(Math.min(2 + i, SC.sentences.length - 1)), 0.4)));
   },
 
   route(t, d) {
@@ -254,8 +263,10 @@ const SCENES = {
 
   xchecks(t, d) {
     const [s0, s1] = speechSpan();
-    stripMap({ progress: 1, xchecks: k => reveal(s0 + 0.8 + ['SP', 'DEL', 'RP'].indexOf(k) * (s1 - s0) / 4, 0.3) });
-    tag('X-CHECK: ALL VEHICLES + PERSONNEL ACCOUNTED FOR', 640, 92, GREEN, reveal(s0 + 1.2), 18);
+    stripMap({ progress: 1, legend: false, xchecks: k => reveal(s0 + 0.8 + ['SP', 'DEL', 'RP'].indexOf(k) * (s1 - s0) / 5, 0.3) });
+    const items = bullets(), n = items.length; panel(40, 120, 420, 470); text('X-CHECKS · MARCH BA FTX', 64, 156, 16, GREEN, 900);
+    let yy = 200; items.forEach((s, i) => { const a = reveal(bulletAt(i, n), 0.4); const ls = wrap(s, 360, 19, 600); if (a > 0) { ctx.globalAlpha = a; check(76, yy - 6, 20); ctx.globalAlpha = 1; } ls.forEach((l, k) => text(l, 98, yy + k * 23, 19, '#d8f5dc', 600, 'left', a)); yy += ls.length * 23 + 20; });
+    
   },
 
   march(t, d) {
@@ -269,9 +280,9 @@ const SCENES = {
     const catching = lag > 3 && t > cuT;
     if (lag > 3) dimLine(vs[2].x, vs[1].rear, y + 76, catching ? 'CATCHING UP AT THE POSTED LIMIT' : 'FELL BEHIND', AMBER);
     const sp = (x0, label, val, col) => { panel(x0, 470, 360, 130); text(label, x0 + 180, 506, 16, '#9dbba2', 800, 'center'); text(val, x0 + 180, 566, 32, col, 900, 'center'); };
-    sp(60, 'MARCH SPEED', 'POSTED − 5', GREEN);
-    sp(460, 'CATCH-UP SPEED', 'POSTED LIMIT', catching ? AMBER : '#c9e8cd');
-    sp(860, 'TERRAIN', 'HIGHWAY', '#eaffef');
+    sp(60, 'MARCH SPEED', 'POSTED − 5', GREEN); text('or lower TM / SOP cap', 240, 590, 14, '#9dbba2', 700, 'center');
+    sp(460, 'CATCH-UP SPEED', 'POSTED LIMIT', catching ? AMBER : '#c9e8cd'); text('never above a TM / SOP cap', 640, 590, 14, '#9dbba2', 700, 'center');
+    sp(860, 'TERRAIN', 'HIGHWAY', '#eaffef'); text('interval per SOP · open up when wet', 1040, 590, 14, '#9dbba2', 700, 'center');
   },
 
   serials(t, d) {
@@ -301,7 +312,9 @@ const SCENES = {
     // breakdown inset
     const bi = reveal(sStart(Math.min(1, n - 1)) - 0.2, 0.4); ctx.globalAlpha = bi; panel(40, 120, 420, 190); ctx.globalAlpha = 1;
     if (bi > 0) { ctx.save(); ctx.globalAlpha = bi; ctx.fillStyle = '#16231a'; ctx.fillRect(80, 200, 360, 60); plsTop(330, 245, 14, {}); hazard(330 - 11.3 * 14 + 4, 245, Math.floor(t * 2.5) % 2 === 0); hazard(330, 245, Math.floor(t * 2.5) % 2 === 0); ctx.restore();
-      text('BREAKDOWN: 4-WAYS ON · REPORT TO CC/ACC AND UP', 260, 160, 14, AMBER, 900, 'center', bi); text('Recovery asset: tow bars', 260, 292, 15, '#c9e8cd', 700, 'center', bi); }
+      text('BREAKDOWN: 4-WAYS ON · REPORT TO CC/ACC AND UP', 250, 160, 14, AMBER, 900, 'center', bi); text('Recovery asset: tow bars', 250, 292, 15, '#c9e8cd', 700, 'center', bi); }
+    const more = bullets().slice(4); if (more.length) { const pa = reveal(sStart(Math.min(4, n - 1)) - 0.2, 0.4); ctx.globalAlpha = pa; panel(40, 330, 420, 260); ctx.globalAlpha = 1;
+      let yy = 372; more.forEach((s, i) => { const a = reveal(sStart(Math.min(4 + i, n - 1)), 0.4); const ls = wrap(s, 360, 18, 600); if (a > 0) { ctx.globalAlpha = a; check(66, yy - 6, 20); ctx.globalAlpha = 1; } ls.forEach((l, k) => text(l, 88, yy + k * 22, 18, '#d8f5dc', 600, 'left', a)); yy += ls.length * 22 + 18; }); }
   },
 
   safety(t, d) { cardsScene('Safety', { left: () => { const a = reveal(0.3);
@@ -358,9 +371,26 @@ const SCENES = {
     text('Plan it. Brief it. Lead it.', 640, 220, 46, '#eaffef', 800, 'center', a);
     const refs = bullets().length ? bullets() : ['ATP 4-11 · Army Motor Transport Operations', 'DTR 4500.9-R Part II · AR 385-10 · DD Form 2977', 'Unit SOP'];
     refs.forEach((s, i) => text(s, 640, 290 + i * 34, 19, '#c9e8cd', 500, 'center', a * reveal(1.0 + i * 0.4)));
-    text('Training aid only. Always verify against the current publications and your unit SOP.', 640, 450, 15, '#7f9a84', 500, 'center', a * reveal(2.5));
+    text('Training aid only. Always verify against the current publications and your unit SOP.', 640, 480, 15, '#7f9a84', 500, 'center', a * reveal(2.5));
   },
 
+  casestudy(t, d) {
+    mapBG(); const n = SC.sentences.length, y = 250, ppm = 9;
+    const v = 22, stopT = sStart(Math.min(4, n - 1)), dec = 0.9;                 // ~50 mph in m/s; braking time (s)
+    const pos2 = tt => tt < stopT ? v * tt : v * stopT + v * Math.min(tt - stopT, dec) - 0.5 * (v / dec) * Math.min(tt - stopT, dec) ** 2;
+    const p2end = pos2(stopT + dec), follow = 34, hitT = (p2end - PLS.LF + follow) / v;
+    const crash = t >= hitT, p2 = pos2(t), p3 = crash ? p2end - PLS.LF : v * t - follow, p1 = p2 + 30;
+    roadBand(y, 100, -Math.min(p2, p2end) * ppm);
+    const X = m => 820 + (m - p2) * ppm;
+    plsTop(X(p1), y, ppm, {}); plsTop(X(p2), y, ppm, {}); plsTop(X(p3), y, ppm, { body: '#7a5a3a' });
+    text('Truck 1', X(p1) - PLS.LF * ppm / 2, y - 46, 15, '#9dbba2', 800, 'center'); text('Truck 2', X(p2) - PLS.LF * ppm / 2, y - 46, 15, '#9dbba2', 800, 'center');
+    text('Truck 3 · unauthorized driver', X(p3) - PLS.LF * ppm / 2, y + 54, 15, AMBER, 900, 'center');
+    if (crash) { const fx = X(p3) + 4; ctx.fillStyle = `rgba(255,77,77,${0.55 + 0.45 * Math.sin(t * 12)})`; ctx.beginPath(); for (let k = 0; k < 10; k++) { const r = k % 2 ? 18 : 44, a = k * Math.PI / 5; ctx.lineTo(fx + Math.cos(a) * r, y + Math.sin(a) * r); } ctx.closePath(); ctx.fill(); tag('REAR-END AT ~50-55 MPH', 640, 150, RED, 1, 22); }
+    else if (t > stopT) tag('TRUCKS AHEAD STOP', 640, 150, AMBER, 1, 20);
+    const items = bullets(); panel(60, 360, 1160, 200);
+    items.forEach((s, i) => { const col = i % 2, row = Math.floor(i / 2); const a = reveal(bulletAt(i, items.length), 0.4); text((i >= items.length - 1 ? '✓  ' : '•  ') + s, 90 + col * 570, 404 + row * 52, 20, i >= items.length - 1 ? GREEN : '#eaffef', 700, 'left', a); });
+    text('Source: DVIDS, "Training Tragedy" (2019). Illustration, not to scale.', 1220, 600, 13, '#7f9a84', 600, 'right');
+  },
   cards(t, d) { cardsScene(SC.title); },
 };
 startPlayer();
